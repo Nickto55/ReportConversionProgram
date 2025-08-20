@@ -28,6 +28,8 @@ class JsonConfig:
         try:
             if not os.path.exists(self.getJPPathFile_input()):
                 self.setJPFilePathAndName()
+            if not os.path.exists((self.getCzPathFile_input())):
+                self.setCzFilePathAndName()
         except:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
 
@@ -94,7 +96,6 @@ class JsonConfig:
         """
         Установка нового пути
         """
-        print(f"{os.getcwd()}/{self.getJPNameFile_output()}")
         self.data["ЖП"]["Path for output excel"] = f"{os.getcwd()}/{self.getJPNameFile_output()}"
         self.save()
 
@@ -117,6 +118,74 @@ class JsonConfig:
         data = self.data["ЖП"]
         return str(data.get(columnName, ""))
 
+
+    """
+    
+    Для CZ
+    
+    """
+
+    def setCzFilePathAndName(self):
+        def updatePath():
+            messagebox.showwarning("Внимание!",
+                                   f"Файла ({self.getCzNameFile_input()}), для СЗ не обнаружено\nОткройте его заново")
+            return updateInfoConfig(1)
+
+        full_path = updatePath()
+        self.data["СЗ"]["Path for input excel"] = full_path
+        self.data["СЗ"]["Input excel file"] = os.path.basename(full_path)
+
+        if str(self.data["СЗ"].get("Path for output excel", "")) == "":
+            self.setCzPathFile_output()
+        self.save()
+
+    def setCzColumnName(self, columnName: str, columnValue):
+        """
+        Установка новых иминований столбцов, на вход ключ и знначение
+        :param columnName: ключ
+        :param columnValue: значение
+        :return:
+        """
+        self.data["СЗ"][columnName] = columnValue
+        self.save()
+
+    def setCzNameFile_output(self, name: str):
+        """
+        Установка нового имени
+        :param name: имя файла
+        :return:
+        """
+        self.data["СЗ"]["Name for output excel"] = name
+        self.save()
+
+    def setCzPathFile_output(self):
+        """
+        Установка нового пути
+        """
+        self.data["СЗ"]["Path for output excel"] = f"{os.getcwd()}/{self.getCzNameFile_output()}"
+        self.save()
+
+    def getCzNameFile_input(self):
+        data = self.data["СЗ"]
+        return str(data.get("Input excel file", ""))
+
+    def getCzNameFile_output(self):
+        data = self.data["СЗ"]
+        return str(data.get("Name for output excel", ""))
+
+    def getCzPathFile_input(self):
+        data = self.data["СЗ"]
+        return str(data.get("Path for input excel", ""))
+
+    def getCzPathFile_output(self):
+        data = self.data["СЗ"]
+        return str(data.get("Path for output excel", ""))
+
+    def getCzColumnName(self, columnName: str, neeed_list:int=0):
+        data = self.data["СЗ"]
+        if neeed_list:
+            return data.get(columnName, "")
+        return str(data.get(columnName, ""))
 
 if __name__ == "__main__":
     run = JsonConfig()
