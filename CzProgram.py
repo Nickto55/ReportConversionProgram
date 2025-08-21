@@ -6,6 +6,7 @@ from tkinter import messagebox, ttk
 
 import pandas as pd
 
+import ExcelPrint
 import JsonWork
 import Search
 
@@ -55,7 +56,6 @@ class CzMain:
         self.accepted_no_repit = None
         self.rc_no_repit = None
 
-        self.main()
 
     def main(self):
         result = []
@@ -97,14 +97,12 @@ class CzMain:
                 pos_date = self.hearders.index(hearder)
 
         if 0 in [pos_close, pos_rc, pos_accepted, pos_dse, pos_done, pos_date]:
-            print(pos_date)
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия заголовков")
 
-        result_row = ["ФОЦ"]
         self.search.filter_and_save_columns(self.columns)
 
-        rc_no_repit = self.search.get_colum(self.columns[0])
-        accepted_no_repit = self.search.get_colum(self.columns[1])
+        rc_no_repit = self.search.get_colum(self.columns[0], foc_mode=1)
+        accepted_no_repit = self.search.get_colum(self.columns[1], foc_mode=1)
 
         """ Если вдруг надо будет автоматизировать выбор
         if "[]" == self.config.getCzColumnName("Table of contents: Rc full value"):
@@ -115,26 +113,84 @@ class CzMain:
         self.rc_no_repit = rc_no_repit
         self.accepted_no_repit = accepted_no_repit
 
-        # """Надо разобраться"""
-        #
-        # gui = GuiManager(len(self.accepted_no_repit), len(self.rc_no_repit), self.parent)
-        #
-        # root = gui.create_gui(
-        #
-        #     self.rc_no_repit,
-        #     self.accepted_no_repit
-        # )
-        #
-        #
-        # root.mainloop()
-        #
-        # selected = gui.get_selected_values()
-        # self.config.setCzColumnName("Table of contents: Rc user chuse value", selected["rc"])
-        # self.config.setCzColumnName("Table of contents: Accepted user chuse value", selected["accepted"])
-        #
-        # """Конец разбора"""
+        """Надо разобраться"""
+
+        gui = GuiManager(len(self.accepted_no_repit), len(self.rc_no_repit), self.parent)
+
+        root = gui.create_gui(
+
+            self.rc_no_repit,
+            self.accepted_no_repit
+        )
+
+        root.mainloop()
+
+        selected = gui.get_selected_values()
+        self.config.setCzColumnName("Table of contents: Rc user chuse value", ["11102", "11403"])
+        self.config.setCzColumnName("Table of contents: Accepted user chuse value", selected["accepted"])
+
+        """Конец разбора"""
 
         def foc(date_search: int = None):
+            count_foc = 0
+            dce_list = []
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if n_rc in self.config.getCzColumnName("Table of contents: Rc user chuse value", 1):
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
+                                            count_foc += 1
+                                    else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
+                                        count_foc += 1
+
+                                    break
+                                break
+
+            return count_foc
+
+        result_row = ["ФОЦ", foc(), "", foc(2025), foc(2024), foc(2023), foc(2022)]
+        result.append(result_row)
+
+        def toc(date_search: int = None):
             count_foc = 0
             for i in self.data:
                 data = self.data.get(i, "")
@@ -142,37 +198,253 @@ class CzMain:
                 n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
                 n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
                 if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
-                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"),"")).replace(" ", "").split(",")
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
                     for n_rc in n_rc_list:
-                        if n_rc in self.config.getCzColumnName("Table of contents: Rc user chuse value", 1):
-                            n_accepted_list = str(data.get(self.config.getCzColumnName("Table of contents: Accepted"),"")).replace(" ", "").split(",")
-                            for n_accepted in n_accepted_list:
-                                n_accepted = n_accepted[:len(n_accepted)//2+1]
-                                if len(n_rc_list) >2 :
-                                    print(n_rc_list)
-                                if n_accepted in self.config.getCzColumnName("Table of contents: Accepted user chuse value", 1):
+                        if "11402" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
                                     if not pd.isna(date_search):
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
                                             count_foc += 1
+                                    else:
+                                        count_foc += 1
 
                                     break
-                            break
-
+                                break
             return count_foc
 
+        result_row = ["ТОЦ", toc(), "", toc(2025), toc(2024), toc(2023), toc(2022)]
+        result.append(result_row)
 
+        def poc(date_search: int = None):
+            count_foc = 0
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if "11404" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
 
-        print(foc(2025))
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            count_foc += 1
+                                    else:
+                                        count_foc += 1
 
-        result_row = ["ТОЦ"]
-        result_row = ["ПОЦ"]
-        result_row = ["Итого"]
+                                    break
+                                break
+            return count_foc
 
-        for i in result:
-            print(i)
+        result_row = ["ПОЦ", poc(), "", poc(2025), poc(2024), poc(2023), poc(2022)]
+        result.append(result_row)
 
+        result_row = ["", "", "", "", "", "", ""]
+        result.append(result_row)
+        result.insert(2, ["Итого", result[2][1] + result[3][1] + result[4][1], "",
+                          result[2][3] + result[3][3] + result[4][3], result[2][4] + result[3][4] + result[4][4],
+                          result[2][5] + result[3][5] + result[4][5], result[2][6] + result[3][6] + result[4][6]])
+
+        def rc_11102(date_search: int = None):
+            count_foc = 0
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if "11102" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            count_foc += 1
+                                    else:
+                                        count_foc += 1
+
+                                    break
+                                break
+            return count_foc
+
+        result_row = ["РЦ 11102", rc_11102(), "", rc_11102(2025), rc_11102(2024), rc_11102(2023), rc_11102(2022)]
+        result.append(result_row)
+
+        def rc_11402(date_search: int = None):
+            count_foc = 0
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if "11402" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            count_foc += 1
+                                    else:
+                                        count_foc += 1
+
+                                    break
+                                break
+            return count_foc
+
+        result_row = ["РЦ 11402", rc_11402(), "", rc_11402(2025), rc_11402(2024), rc_11402(2023), rc_11402(2022)]
+        result.append(result_row)
+
+        def rc_11403(date_search: int = None):
+            count_foc = 0
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if "11403" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            count_foc += 1
+                                    else:
+                                        count_foc += 1
+
+                                    break
+                                break
+            return count_foc
+
+        result_row = ["РЦ 11403", rc_11403(), "", rc_11403(2025), rc_11403(2024), rc_11403(2023), rc_11403(2022)]
+        result.append(result_row)
+
+        def rc_11404(date_search: int = None):
+            count_foc = 0
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if "11404" in n_rc:
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            count_foc += 1
+                                    else:
+                                        count_foc += 1
+
+                                    break
+                                break
+            return count_foc
+
+        result_row = ["РЦ 11404", rc_11404(), "", rc_11404(2025), rc_11404(2024), rc_11404(2023), rc_11404(2022)]
+        result.append(result_row)
+
+        # for i in result:
+        #     print(i)
+        return result
 
 
 class GuiManager:
@@ -256,10 +528,10 @@ class GuiManager:
         notebook.add(subscribed_frame, text="Подписано")
         self.subscribed_vars = self.create_checkboxes(subscribed_frame, subscribed_list, "Выберите подписанные")
 
-        # Вкладка для РЦ
-        rc_frame = ttk.Frame(notebook)
-        notebook.add(rc_frame, text="РЦ")
-        self.rc_vars = self.create_checkboxes(rc_frame, rc_list, "Выберите РЦ")
+        # # Вкладка для РЦ
+        # rc_frame = ttk.Frame(notebook)
+        # notebook.add(rc_frame, text="РЦ")
+        # self.rc_vars = self.create_checkboxes(rc_frame, rc_list, "Выберите РЦ")
 
         # Кнопка для подтверждения выбора
         button_frame = ttk.Frame(self.root)
@@ -280,7 +552,7 @@ class GuiManager:
         """Обработчик нажатия кнопки подтверждения"""
         # Собираем выбранные значения
         self.selected_subscribed = [item for var, item in self.subscribed_vars if var.get()]
-        self.selected_rc = [item for var, item in self.rc_vars if var.get()]
+        # self.selected_rc = [item for var, item in self.rc_vars if var.get()]
 
         # Проверяем, что хотя бы что-то выбрано
         if not any([self.selected_subscribed, self.selected_completed, self.selected_rc]):
@@ -300,5 +572,17 @@ class GuiManager:
 
 if __name__ == "__main__":
     root = tk.Tk()
+
+    config = JsonWork.JsonConfig()
+    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
+
     run = CzMain(root)
+    excelPr.write_to_sheet(run.main(), "СЗ")
+
     root.mainloop()
+
+
+
+
+
+

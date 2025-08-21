@@ -101,34 +101,96 @@ class SearchCz:
         """Возвращает отфильтрованные данные."""
         return self.filtered_data
 
-    def get_colum(self, get_colum: str, repeat: float = 0):
-        print( get_colum , self.columns_save)
-        if get_colum in self.columns_save:
-            result = []
-            for i in self.filtered_data:
-                valueResult = self.filtered_data[i][f"{get_colum}"]
-                if repeat:
-                    result.append(str(valueResult))
-                else:
-                    if not valueResult in result:
-                        valueResult = str(valueResult).replace(", ","|")
-                        valueResult = valueResult.split("|")
-                        for i in valueResult:
-                            if not i in result:
-                                i = str(i)
-                                if ":" in i and  "-" in i :
-                                    i = i[:len(i)//2+1]
-                                if i != "":
-                                    result.append(str(i))
+    def get_colum(self, get_colum: str, foc_mode: float = 0):
+        print(get_colum, self.columns_save)
 
-
-
-            result.sort()
-            result.reverse()
-            return result
-        else:
-            messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n {get_colum} в {self.columns_save} ")
+        # Проверка столбца
+        if get_colum not in self.columns_save:
+            messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n{get_colum} в {self.columns_save}")
             return None
+
+        result = []
+
+        # === 1. Подготовка: один раз до цикла ===
+        # Получаем словарь данных один раз
+        all_data_dict = self.get_dict_all_data() if foc_mode != 0 else None
+
+        # Получаем имена колонок один раз
+        done_col = self.config.getCzColumnName("Table of contents: Done") if foc_mode != 0 else None
+        close_col = self.config.getCzColumnName("Table of contents: Close") if foc_mode != 0 else None
+        dse_col = self.config.getCzColumnName("Table of contents: DCE") if foc_mode != 0 else None
+
+        # Вспомогательная функция проверки пустоты
+        def is_empty(val):
+            return (val is None or
+                    (isinstance(val, str) and val.strip() in ("", "nan", "n/a", "none", "-", "null")) or
+                    (hasattr(pd, 'isna') and pd.isna(val)))
+
+        # === 2. Основной цикл ===
+        for key in self.filtered_data:
+            # --- FOC MODE: фильтрация ---
+            if foc_mode != 0:
+                row_data = all_data_dict.get(key, {})
+                if not (is_empty(row_data.get(done_col)) and
+                        is_empty(row_data.get(close_col)) and
+                        not is_empty(row_data.get(dse_col))):
+                    continue  # не подходит под условие — пропускаем
+
+            # --- Обработка значения ---
+            value = self.filtered_data[key].get(get_colum)
+            if value is None or (hasattr(pd, 'isna') and pd.isna(value)):
+                continue
+
+            # Преобразуем в строку и разбиваем
+            value_str = str(value).strip()
+            if not value_str:
+                continue
+
+            # Заменяем ", " на "|", разбиваем
+            items = value_str.replace(", ", "|").split("|")
+
+            for item in items:
+                item = item.strip()
+                if not item:
+                    continue
+
+                # Обрезка для сложных имён
+                if ":" in item and "-" in item:
+                    item = item[:len(item) // 2 + 1]
+
+                if item not in result:
+                    result.append(item)
+
+        # === 3. Финальная сортировка ===
+        result.sort(reverse=True)
+        result.append("")
+        return result
+
+    # def get_colum(self, get_colum: str, foc_mode:float = 0):
+    #     print( get_colum , self.columns_save)
+    #     if get_colum in self.columns_save:
+    #         result = []
+    #         for i in self.filtered_data:
+    #             valueResult = self.filtered_data[i][f"{get_colum}"]
+    #             if not valueResult in result:
+    #                 valueResult = str(valueResult).replace(", ","|")
+    #                 valueResult = valueResult.split("|")
+    #                 for i in valueResult:
+    #                     if not i in result:
+    #                         i = str(i)
+    #                         if ":" in i and  "-" in i :
+    #                             i = i[:len(i)//2+1]
+    #                         if i != "":
+    #                             result.append(str(i))
+    #
+    #
+    #
+    #         result.sort()
+    #         result.reverse()
+    #         return result
+    #     else:
+    #         messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n {get_colum} в {self.columns_save} ")
+    #         return None
 
 
 """def get_sheet_names(self):
