@@ -33,6 +33,14 @@ class JsonConfig:
         except:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
 
+        try:
+            if self.getConfigVersionConfig() < float(Config.configProgram["Program:"].get("Config version", "").replace(":","")):
+                messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг может быть не совместим")
+                return
+        except:
+            messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг не совместим")
+            return
+
     def save(self):
         """Сохраняет текущие данные в файл."""
         with open(self.file_path, 'w', encoding='utf-8') as f:
@@ -53,6 +61,40 @@ class JsonConfig:
                 self.data = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             print("JsonSave файл пуст")
+
+    """
+    
+    Конфиг основной программы
+    
+    """
+    def setConfigMainProgram(self):
+
+        if str(self.data["Program:"].get("Assembly name", "")) == "":
+            self.setConfigNameAssemblyProgram()
+        self.save()
+
+    def setConfigNameAssemblyProgram(self):
+        self.data["Program:"]["Assembly name"] = "ReportConversionProgram"
+        self.save()
+
+    def getConfigNameAssemblyProgram(self): return str(self.data["Program:"].get("Assembly name", ""))
+
+    def getConfigSizeXProgram(self): return int(self.data["Program:"].get("Size by X", ""))
+    def getConfigSizeYProgram(self): return int(self.data["Program:"].get("Size by Y", ""))
+
+    def getConfigVersionProgram(self):return float(self.data["Program:"].get("Version", "").replace(":",""))
+    def getConfigVersionConfig(self):return float(self.data["Program:"].get("Config version", "").replace(":",""))
+
+    def setConfigSizeXProgram(self, modification):
+        self.data["Program:"]["Size by X"] = modification
+        self.save()
+    def setConfigSizeYProgram(self, modification):
+        self.data["Program:"]["Size by Y"] = modification
+        self.save()
+
+
+
+
 
     """
     

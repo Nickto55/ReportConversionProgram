@@ -34,7 +34,6 @@ def send_notification(title, message, settime=15, file_path=""):
 
 
 class JpMain:
-
     def __init__(self):
         self.config = JsonWork.JsonConfig()
 
@@ -286,4 +285,4 @@ if __name__ == "__main__":
     excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
 
     excelPr.write_to_sheet(run.main(), "ЖП")
-    send_notification("Программа завершена", "Программа завершена, проверте файл",16)
+    # send_notification("Программа завершена", "Программа завершена, проверте файл",16)

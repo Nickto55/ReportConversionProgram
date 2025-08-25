@@ -5,10 +5,20 @@ from datetime import date, timedelta, datetime
 from tkinter import messagebox, ttk
 
 import pandas as pd
+import plyer
 
 import ExcelPrint
 import JsonWork
 import Search
+
+
+def send_notification(title, message, settime=15, file_path=""):
+    plyer.notification.notify(
+        title=title,
+        message=message,
+        app_name="Good Morning (CZ)",
+        timeout=settime
+    )
 
 
 def resource_path(relative_path):
@@ -45,7 +55,7 @@ def get_dates(len_date: int, len_date_value: int = 3, year: bool = False):
 
 class CzMain:
 
-    def __init__(self, parent):
+    def __init__(self, parent, accepted_chuse_user: bool = False):
         self.parent = parent
         self.config = JsonWork.JsonConfig()
 
@@ -54,8 +64,8 @@ class CzMain:
         self.hearders: list = self.search.get_headers()
         self.columns = []
         self.accepted_no_repit = None
+        self.accepted_chuse_user = accepted_chuse_user
         self.rc_no_repit = None
-
 
     def main(self):
         result = []
@@ -69,6 +79,7 @@ class CzMain:
 
         result_row = ["", "", "", "", "", "", ""]
         result.append(result_row)
+        listDate = get_dates(int(self.config.getCzColumnName("Table of contents: List_date")), 1, year=True)
 
         count_conversion = 0
 
@@ -113,23 +124,34 @@ class CzMain:
         self.rc_no_repit = rc_no_repit
         self.accepted_no_repit = accepted_no_repit
 
-        """Надо разобраться"""
+        if self.accepted_chuse_user or "0" in [
+            str(len(self.config.getCzColumnName("RC search parameters: Rc foc value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc toc value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc poc value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc 'rc_11102' value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc 'rc_11402' value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc 'rc_11403' value", 1))),
+            str(len(self.config.getCzColumnName("RC search parameters: Rc 'rc_11404' value", 1))),
+            str(len(self.config.getCzColumnName("Table of contents: Rc user chuse value", 1))),
+            str(len(self.config.getCzColumnName("Table of contents: Accepted user chuse value", 1)))
+        ]:
+            """Надо разобраться"""
 
-        gui = GuiManager(len(self.accepted_no_repit), len(self.rc_no_repit), self.parent)
+            gui = GuiManager(len(self.accepted_no_repit), len(self.rc_no_repit), self.parent)
 
-        root = gui.create_gui(
+            root = gui.create_gui(
 
-            self.rc_no_repit,
-            self.accepted_no_repit
-        )
+                self.rc_no_repit,
+                self.accepted_no_repit
+            )
 
-        root.mainloop()
+            root.mainloop()
 
-        selected = gui.get_selected_values()
-        self.config.setCzColumnName("Table of contents: Rc user chuse value", ["11102", "11403"])
-        self.config.setCzColumnName("Table of contents: Accepted user chuse value", selected["accepted"])
+            selected = gui.get_selected_values()
+            self.config.setCzColumnName("Table of contents: Rc user chuse value", ["11102", "11403"])
+            self.config.setCzColumnName("Table of contents: Accepted user chuse value", selected["accepted"])
 
-        """Конец разбора"""
+            """Конец разбора"""
 
         def foc(date_search: int = None):
             count_foc = 0
@@ -144,7 +166,73 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if n_rc in self.config.getCzColumnName("Table of contents: Rc user chuse value", 1):
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc foc value", 1):
+                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
+                                                       "")
+                            if not (isinstance(n_accepted_list, str)) and not (
+                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
+                                try:
+                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
+                                except:
+                                    print(n_accepted_list, """Ошибка с datetime""")
+                            n_accepted_list1 = [n_accepted_list]
+
+                            for n_accepted in n_accepted_list1:
+                                if n_accepted in self.config.getCzColumnName(
+                                        "Table of contents: Accepted user chuse value", 1):
+                                    if not pd.isna(date_search):
+                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
+                                                          "")
+                                        if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
+                                            count_foc += 1
+                                    else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
+                                        count_foc += 1
+
+                                    break
+                                break
+
+            for dce in dce_list:
+                if dce_list.count(dce) > 1:
+                    print(dce_list.count(dce), dce)
+
+            return count_foc
+
+        result_row = ["ФОЦ", foc(), ""]
+
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(foc(int(listDate[i])))
+        result.append(result_row)
+
+        def toc(date_search: int = None):
+            count_foc = 0
+            dce_list = []
+            for i in self.data:
+                data = self.data.get(i, "")
+                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
+                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
+                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
+                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
+                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
+                                                                                                                "").split(
+                        ",")
+                    for n_rc in n_rc_list:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc toc value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -187,52 +275,16 @@ class CzMain:
 
             return count_foc
 
-        result_row = ["ФОЦ", foc(), "", foc(2025), foc(2024), foc(2023), foc(2022)]
-        result.append(result_row)
+        result_row = ["ТОЦ", toc(), ""]
 
-        def toc(date_search: int = None):
-            count_foc = 0
-            for i in self.data:
-                data = self.data.get(i, "")
-                n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
-                n_close = data.get(self.config.getCzColumnName("Table of contents: Close"), "")
-                n_dse = data.get(self.config.getCzColumnName("Table of contents: DCE"), "")
-                if pd.isna(n_done) and pd.isna(n_close) and not pd.isna(n_dse):
-                    n_rc_list = str(data.get(self.config.getCzColumnName("Table of contents: RC"), "")).replace(" ",
-                                                                                                                "").split(
-                        ",")
-                    for n_rc in n_rc_list:
-                        if "11402" in n_rc:
-                            n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
-                                                       "")
-                            if not (isinstance(n_accepted_list, str)) and not (
-                                    isinstance(n_accepted_list, int)) and not pd.isna(n_accepted_list):
-                                try:
-                                    n_accepted_list = str(n_accepted_list)[:len(str(n_accepted_list)) // 2 + 1]
-                                except:
-                                    print(n_accepted_list, """Ошибка с datetime""")
-                            n_accepted_list1 = [n_accepted_list]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(toc(listDate[i]))
 
-                            for n_accepted in n_accepted_list1:
-                                if n_accepted in self.config.getCzColumnName(
-                                        "Table of contents: Accepted user chuse value", 1):
-                                    if not pd.isna(date_search):
-                                        n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
-                                                          "")
-                                        if str(date_search) in str(n_date):
-                                            count_foc += 1
-                                    else:
-                                        count_foc += 1
-
-                                    break
-                                break
-            return count_foc
-
-        result_row = ["ТОЦ", toc(), "", toc(2025), toc(2024), toc(2023), toc(2022)]
         result.append(result_row)
 
         def poc(date_search: int = None):
             count_foc = 0
+            dce_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -243,7 +295,7 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if "11404" in n_rc:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc poc value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -261,25 +313,51 @@ class CzMain:
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
                                             count_foc += 1
                                     else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
                                         count_foc += 1
 
                                     break
                                 break
+
             return count_foc
 
-        result_row = ["ПОЦ", poc(), "", poc(2025), poc(2024), poc(2023), poc(2022)]
+        result_row = ["ПОЦ", poc(), ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(poc(listDate[i]))
         result.append(result_row)
 
         result_row = ["", "", "", "", "", "", ""]
         result.append(result_row)
-        result.insert(2, ["Итого", result[2][1] + result[3][1] + result[4][1], "",
-                          result[2][3] + result[3][3] + result[4][3], result[2][4] + result[3][4] + result[4][4],
-                          result[2][5] + result[3][5] + result[4][5], result[2][6] + result[3][6] + result[4][6]])
+        result_row = ["Итого", result[2][1] + result[3][1] + result[4][1], ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            i += 3
+            result_row.append(result[2][i] + result[3][i] + result[4][i])
+        result.insert(2, result_row)
+        # result.insert(2, ["Итого", result[2][1] + result[3][1] + result[4][1], "",
+        #                   result[2][3] + result[3][3] + result[4][3], result[2][4] + result[3][4] + result[4][4],
+        #                   result[2][5] + result[3][5] + result[4][5], result[2][6] + result[3][6] + result[4][6]]
+        list_dse_for_check = []
 
         def rc_11102(date_search: int = None):
             count_foc = 0
+            dce_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -290,7 +368,7 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if "11102" in n_rc:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc 'rc_11102' value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -308,19 +386,46 @@ class CzMain:
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
                                             count_foc += 1
+                                            try:
+                                                list_dse_for_check.remove(n_dse)
+                                            except:
+                                                print(
+                                                    f"11102: ДСЕ повторяется в разные года, ошибка выявилась на {date_search} г. Информация:",
+                                                    n_dse, n_rc)
                                     else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
                                         count_foc += 1
-
+                                        list_dse_for_check.append(n_dse)
                                     break
                                 break
+
             return count_foc
 
-        result_row = ["РЦ 11102", rc_11102(), "", rc_11102(2025), rc_11102(2024), rc_11102(2023), rc_11102(2022)]
+        result_row = ["РЦ 11102", rc_11102(), ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(rc_11102(listDate[i]))
         result.append(result_row)
+        list_dse_for_check = []
 
         def rc_11402(date_search: int = None):
             count_foc = 0
+            dce_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -331,7 +436,7 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if "11402" in n_rc:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc 'rc_11402' value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -349,19 +454,49 @@ class CzMain:
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
                                             count_foc += 1
+                                            try:
+                                                list_dse_for_check.remove(n_dse)
+                                            except:
+                                                print(
+                                                    f"11402: ДСЕ повторяется в разные года, ошибка выявилась на {date_search} г. Информация:",
+                                                    n_dse, n_rc)
+
                                     else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
                                         count_foc += 1
+                                        list_dse_for_check.append(n_dse)
 
                                     break
                                 break
+
             return count_foc
 
-        result_row = ["РЦ 11402", rc_11402(), "", rc_11402(2025), rc_11402(2024), rc_11402(2023), rc_11402(2022)]
+        result_row = ["РЦ 11402", rc_11402(), ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(rc_11402(listDate[i]))
         result.append(result_row)
+
+        list_dse_for_check = []
 
         def rc_11403(date_search: int = None):
             count_foc = 0
+            dce_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -372,7 +507,7 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if "11403" in n_rc:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc 'rc_11403' value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -390,19 +525,48 @@ class CzMain:
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
+                                            try:
+                                                list_dse_for_check.remove(n_dse)
+                                            except:
+                                                print(
+                                                    f"11403: ДСЕ повторяется в разные года, ошибка выявилась на {date_search} г. Информация:",
+                                                    n_dse, n_rc)
                                             count_foc += 1
                                     else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
                                         count_foc += 1
+                                        list_dse_for_check.append(n_dse)
 
                                     break
                                 break
+
             return count_foc
 
-        result_row = ["РЦ 11403", rc_11403(), "", rc_11403(2025), rc_11403(2024), rc_11403(2023), rc_11403(2022)]
+        result_row = ["РЦ 11403", rc_11403(), ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(rc_11403(listDate[i]))
         result.append(result_row)
+
+        list_dse_for_check = []
 
         def rc_11404(date_search: int = None):
             count_foc = 0
+            dce_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -413,7 +577,7 @@ class CzMain:
                                                                                                                 "").split(
                         ",")
                     for n_rc in n_rc_list:
-                        if "11404" in n_rc:
+                        if n_rc in self.config.getCzColumnName("RC search parameters: Rc 'rc_11404' value", 1):
                             n_accepted_list = data.get(self.config.getCzColumnName("Table of contents: Accepted", 2),
                                                        "")
                             if not (isinstance(n_accepted_list, str)) and not (
@@ -431,15 +595,41 @@ class CzMain:
                                         n_date = data.get(self.config.getCzColumnName("Table of contents: Date writer"),
                                                           "")
                                         if str(date_search) in str(n_date):
+                                            dceLast = ""
+                                            for dce in dce_list:
+                                                if n_dse == dce:
+                                                    dceLast = dce
+                                                    continue
+                                            if n_dse == dceLast:
+                                                continue
+                                            dce_list.append(n_dse)
+                                            try:
+                                                list_dse_for_check.remove(n_dse)
+                                            except:
+                                                print(
+                                                    f"11404: ДСЕ повторяется в разные года, ошибка выявилась на {date_search} г. Информация:",
+                                                    n_dse, n_rc)
                                             count_foc += 1
                                     else:
+                                        dceLast = ""
+                                        for dce in dce_list:
+                                            if n_dse == dce:
+                                                dceLast = dce
+                                                continue
+                                        if n_dse == dceLast:
+                                            continue
+                                        dce_list.append(n_dse)
+                                        list_dse_for_check.append(n_dse)
                                         count_foc += 1
 
                                     break
                                 break
+
             return count_foc
 
-        result_row = ["РЦ 11404", rc_11404(), "", rc_11404(2025), rc_11404(2024), rc_11404(2023), rc_11404(2022)]
+        result_row = ["РЦ 11404", rc_11404(), ""]
+        for i in range(int(self.config.getCzColumnName("Table of contents: List_date"))):
+            result_row.append(rc_11404(listDate[i]))
         result.append(result_row)
 
         # for i in result:
@@ -552,7 +742,6 @@ class GuiManager:
         """Обработчик нажатия кнопки подтверждения"""
         # Собираем выбранные значения
         self.selected_subscribed = [item for var, item in self.subscribed_vars if var.get()]
-        # self.selected_rc = [item for var, item in self.rc_vars if var.get()]
 
         # Проверяем, что хотя бы что-то выбрано
         if not any([self.selected_subscribed, self.selected_completed, self.selected_rc]):
@@ -580,9 +769,4 @@ if __name__ == "__main__":
     excelPr.write_to_sheet(run.main(), "СЗ")
 
     root.mainloop()
-
-
-
-
-
-
+    send_notification("Программа завершена", "Программа завершена, проверте файл", 16)

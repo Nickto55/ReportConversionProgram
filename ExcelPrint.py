@@ -104,7 +104,3 @@ class ExcelWriter:
 
         except Exception as e:
             print(f"Ошибка при добавлении данных в Excel: {e}")
-
-# Пример использования:
-# writer = ExcelWriter("C:/path/to/your/file.xlsx")
-# writer.write_to_sheet(result_data, "Sheet1")

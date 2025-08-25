@@ -102,13 +102,11 @@ class SearchCz:
         return self.filtered_data
 
     def get_colum(self, get_colum: str, foc_mode: float = 0):
-        print(get_colum, self.columns_save)
 
         # Проверка столбца
         if get_colum not in self.columns_save:
             messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n{get_colum} в {self.columns_save}")
             return None
-
         result = []
 
         # === 1. Подготовка: один раз до цикла ===
