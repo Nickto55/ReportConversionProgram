@@ -3,14 +3,15 @@ configProgram = {
         "Main name": "ReportConversionProgram",
         "GitHub:": r"https://github.com/Nickto55/ReportConversionProgram.git",
         "Version": "0.3:1",
-        "Config version": "0.1",
+        "Config version": "0.2",
         "Assembly name": "Good Morning",
 
         "Size by X": 300,
-        "Size by Y": 100,
+        "Size by Y": 100
 
     },
     "ЖП": {
+        "JP":"JP",
         "Input excel file": "",
         "Path for input excel": r"",
         "Name for output excel": r"ReportConversionProgram.xlsx",
@@ -26,10 +27,12 @@ configProgram = {
         "Table of contents: List_date": 4
     },
     "СЗ": {
+        "CZ":"CZ",
         "Input excel file": "",
         "Path for input excel": r"",
         "Name for output excel": r"ReportConversionProgram.xlsx",
         "Path for output excel": r"",
+
         "Table of contents: List": "Лист1",
         "Table of contents: DCE": "ДСЕ",
         "Table of contents: Accepted": "Подписано",
@@ -53,5 +56,39 @@ configProgram = {
         "Table of contents: Accepted user chuse value": [],
 
         "Table of contents: List_date": 4
+    },
+    "BAM": {
+        "Name input excel file": "",
+        "Name output excel": r"ReportConversionProgram.xlsx",
+
+        "Path for input excel": r"",
+        "Path for output excel": r"",
+
+        "Table of contents: Date": "Дата",
+        "Table of contents: List_date": 4
     }
+}
+
+keys_for_unnecessary_data = {
+    "Program:": [
+        "Main name",
+        "Version",
+        "Config version",
+        "Assembly name",
+        "Size by X",
+        "Size by Y"
+
+    ],
+    "ЖП": [
+        "Input excel file",
+        "Path for input excel",
+        "Name for output excel",
+        "Path for output excel"
+    ],
+    "СЗ": [
+        "Input excel file",
+        "Path for input excel",
+        "Name for output excel",
+        "Path for output excel"
+    ]
 }

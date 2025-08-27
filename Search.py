@@ -1,9 +1,131 @@
-from datetime import date, timedelta
 from tkinter import messagebox
 
 import pandas as pd
 
 import JsonWork
+
+
+class SearchBam:
+    def __init__(self,sheet_name):
+        self.columns_save = []
+        self.config = JsonWork.JsonConfig()
+        self.file_path = self.config.getBAMPathFile_input()
+        self.sheet_name = sheet_name
+        self.data = None
+        self.load_excel()
+        self.filtered_data = None
+        self.filter_and_save_columns(self.config.getBAMColumnName("Table of contents: Date"))
+
+    def return_data(self):
+        return self.data
+
+    def get_dict_all_data(self):
+        """
+        Возвращает весь словарь данных из self.data.
+
+        :return: словарь в формате {индекс: {столбец: значение, ...}}
+        """
+        if self.data is None:
+            print("Данные не загружены.")
+            return {}
+
+        result_dict = {}
+        for index, row in self.data.iterrows():
+            result_dict[index] = row.to_dict()
+        return result_dict
+
+    def load_excel(self):
+        """Загружает данные из Excel файла с указанного листа."""
+        try:
+            # Читаем Excel, используя sheet_name (может быть str, int, или None)
+            self.data = pd.read_excel(self.file_path, sheet_name=self.sheet_name)
+
+            # Если sheet_name не задан (None), по умолчанию берём первый лист
+            if isinstance(self.data, dict):
+                sheet_names = list(self.data.keys())
+                if sheet_names:
+                    first_sheet = sheet_names[0]
+                    print(f"Лист не указан. Загружаем первый лист: {first_sheet}")
+                    self.data = self.data[first_sheet]
+                else:
+                    raise ValueError("Файл Excel не содержит листов.")
+            else:
+                # Успешно загружен один лист
+                print(f"Лист успешно загружен: {self.sheet_name if self.sheet_name else 'первый лист'}")
+
+        except Exception as e:
+            print(f"Ошибка при загрузке файла или листа: {e}")
+            self.data = None
+
+    def get_colum(self, get_colum: str, foc_mode: float = 0):
+        # Проверка столбца
+        if get_colum not in self.columns_save:
+            messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n{get_colum} в {self.columns_save}")
+            return None
+        result = []
+
+        # === 1. Подготовка: один раз до цикла ===
+        all_data_dict = self.get_dict_all_data() if foc_mode != 0 else None
+        done_col = self.config.getBAMColumnName("Table of contents: Date") if foc_mode != 0 else None
+
+        def is_empty(val):
+            return (val is None or
+                    (isinstance(val, str) and val.strip() in ("", "nan", "n/a", "none", "-", "null")) or
+                    (hasattr(pd, 'isna') and pd.isna(val)))
+
+        # === 2. Основной цикл ===
+        for key in self.filtered_data:
+            if foc_mode != 0:
+                row_data = all_data_dict.get(key, {})
+                if not (is_empty(row_data.get(done_col))):
+                    continue  # не подходит под условие — пропускаем
+
+            value = self.filtered_data[key].get(get_colum)
+            if value is None or (hasattr(pd, 'isna') and pd.isna(value)):
+                continue
+
+            value_str = str(value).strip()
+            if not value_str:
+                continue
+
+            items = value_str.replace(", ", "|").split("|")
+
+            for item in items:
+                item = item.strip()
+                if not item:
+                    continue
+
+                if ":" in item and "-" in item:
+                    item = item[:len(item) // 2 + 1]
+
+                if item not in result:
+                    result.append(item)
+
+        # === 3. Финальная сортировка ===
+        result.sort(reverse=True)
+        result.append("")
+        return result
+
+    def filter_and_save_columns(self, columns_to_save: list):
+        """
+        Сохраняет значения из указанных столбцов в словарь.
+        :param columns_to_save: список названий столбцов для сохранения.
+        """
+        if self.data is None:
+            print("Данные не загружены.")
+            return
+
+        # Убедимся, что columns_to_save — это список
+        if isinstance(columns_to_save, str):
+            columns_to_save = [columns_to_save]
+        elif not isinstance(columns_to_save, list):
+            columns_to_save = list(columns_to_save)
+
+        self.columns_save = columns_to_save
+
+        self.filtered_data = {}
+        for index, row in self.data.iterrows():
+            self.filtered_data[index] = {col: row[col] for col in columns_to_save if col in row}
 
 
 class SearchJP:
@@ -86,7 +208,6 @@ class SearchCz:
         Сохраняет значения из указанных столбцов в словарь.
         Можно передать функцию фильтрации.
         :param columns_to_save: список названий столбцов для сохранения.
-        :param filter_func: функция для фильтрации строк (опционально).
         """
         if self.data is None:
             print("Данные не загружены.")
@@ -126,7 +247,6 @@ class SearchCz:
 
         # === 2. Основной цикл ===
         for key in self.filtered_data:
-            # --- FOC MODE: фильтрация ---
             if foc_mode != 0:
                 row_data = all_data_dict.get(key, {})
                 if not (is_empty(row_data.get(done_col)) and

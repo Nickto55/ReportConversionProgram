@@ -224,11 +224,11 @@ class JpMain:
 
         for row in range(len(result2)):
             res_row = []
-            for column in range(max(len(result1[0]), len(result2[0])) + 1):
-                if column == 0:
-                    res_row.append("")
-                    continue
-                column -= 1
+            for column in range(max(len(result1[0])-1, len(result2[0]))):
+                # if column == 0:
+                #     res_row.append("")
+                #     continue
+                # column -= 1
                 if column < len(result2[0]):
                     res_row.append(result2[row][column])
                 else:

@@ -30,6 +30,8 @@ class JsonConfig:
                 self.setJPFilePathAndName()
             if not os.path.exists((self.getCzPathFile_input())):
                 self.setCzFilePathAndName()
+            if not os.path.exists((self.getBAMPathFile_input())):
+                self.setBAMFilePathAndName()
         except:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
 
@@ -61,6 +63,15 @@ class JsonConfig:
                 self.data = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             print("JsonSave файл пуст")
+
+    def getData(self):
+        return self.data
+
+    def recoveryLoseKeyAndValue(self, dictionary: str, key_for_dictionary: str, value_for_key: str):
+        print("JsonWork, config, recoveryLoseKeyAndValue",dictionary, key_for_dictionary,value_for_key)
+        self.data[dictionary][key_for_dictionary] = value_for_key
+        self.save()
+
 
     """
     
@@ -228,6 +239,70 @@ class JsonConfig:
         if neeed_list:
             return data.get(columnName, "")
         return str(data.get(columnName, ""))
+
+    """
+    
+    Для BAM
+    
+    """
+    def setBAMFilePathAndName(self):
+        def updatePath():
+            messagebox.showwarning("Внимание!",
+                                   f"Файла ({self.getBAMNameFile_input()}), для BAM не обнаружено\nОткройте его заново")
+            return updateInfoConfig(1)
+
+        full_path = updatePath()
+        self.data["BAM"]["Path for input excel"] = full_path
+        self.data["BAM"]["Name input excel file"] = os.path.basename(full_path)
+
+        if str(self.data["BAM"].get("Path for output excel", "")) == "":
+            self.setBAMPathFile_output()
+        self.save()
+
+    def setBAMColumnName(self, columnName: str, columnValue: str):
+        """
+        Установка новых иминований столбцов, на вход ключ и знначение
+        :param columnName: ключ
+        :param columnValue: значение
+        :return:
+        """
+        self.data["BAM"][columnName] = columnValue
+        self.save()
+    def setBAMNameFile_output(self, name: str):
+        """
+        Установка нового имени
+        :param name: имя файла
+        :return:
+        """
+        self.data["BAM"]["Name output excel"] = name
+        self.save()
+
+    def setBAMPathFile_output(self):
+        """
+        Установка нового пути
+        """
+        self.data["BAM"]["Path for output excel"] = f"{os.getcwd()}/{self.getBAMNameFile_output()}"
+        self.save()
+
+    def getBAMNameFile_input(self):
+        data = self.data["BAM"]
+        return str(data.get("Name input excel file", ""))
+
+    def getBAMNameFile_output(self):
+        data = self.data["BAM"]
+        return str(data.get("Name output excel", ""))
+
+    def getBAMPathFile_input(self):
+        data = self.data["BAM"]
+        return str(data.get("Path for input excel", ""))
+    def getBAMPathFile_output(self):
+        data = self.data["BAM"]
+        return str(data.get("Path for output excel", ""))
+
+    def getBAMColumnName(self, columnName: str):
+        data = self.data["BAM"]
+        return str(data.get(columnName, ""))
+
 
 if __name__ == "__main__":
     run = JsonConfig()

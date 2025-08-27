@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH
 
+import pandas as pd
+
 import Config
 # import plyer
 import JsonWork
@@ -53,21 +55,90 @@ class Main_gui:
         
         """
         self.modification = IntVar(value=1)
-
+        self.availability_of_required_data = True
 
         """
         
         Вызовы функций
         
         """
+        self.checking_data_inputs()
 
         self.create_gui()
 
+    def recovery_data_inputs(self, dic_recovery:dict):
+        count_recovery_data_inputs = 0
+        def label_and_enntry(input_frame):
+            nonlocal count_recovery_data_inputs
+
+            label = Label(input_frame, text=f"{value} для {key}")
+            label.grid(row=count_recovery_data_inputs,column=0,sticky="w")
+            entryL = Entry(input_frame,width=71)
+            entryL.grid(row=count_recovery_data_inputs, column=1)
+            count_recovery_data_inputs+=1
+
+            return input_frame
+
+        def button_save_command():
+            messagebox.showinfo("Недоступно", "В разработке")
+
+        parent = tk.Toplevel(self.root)
+        parent.title("Необходимо ввести данные")
+        parent.geometry("600x180")
+
+        main_faim = LabelFrame(parent, text="Введите:")
+        main_faim.pack(ipadx=5, ipady=5, fill=BOTH)
+
+        if not self.availability_of_required_data:
+            for key, values in dic_recovery.items():
+                for value in values:
+                    main_faim = label_and_enntry(main_faim)
+
+        button_save = Button(parent, text="Сохранить", command=button_save_command)
+        button_save.pack(anchor="se")
+
+        parent.mainloop()
+
     def checking_data_inputs(self):
         """
-        Для определения какие данные в json файле отсутсдвуют для корректной раюоты подпрограмм:
+        Для определения какие данные в json файле отсутсдвуют для корректной работы подпрограмм:
         :return: None, если есть всё, или возвращения имяни не хватающего ключа
         """
+        recovery_data_inputs = {
+            "Program:": [],
+            "ЖП": [],
+            "СЗ": []
+        }
+        data = self.config.getData()
+        """
+        Проверка наличия всех ключей, глубина = 2
+        """
+        lose_key_list = Config.configProgram.keys()-data.keys()
+        if len(lose_key_list) != 0:
+            messagebox.showerror("Ошибка", "Структура файла конфига нарушена, или значительно обновлена в последнем обнавлении\nУдалите текущий файл конфига")
+        for local_key in data.keys():
+            local_lose_key_list = Config.configProgram[local_key].keys() - data[local_key].keys()
+            if len(local_lose_key_list) != 0:
+                if messagebox.askyesno("внимане", "Вайл конфига был изменён, хотите внести возможные изменения?"):
+                    for i in local_lose_key_list:
+                        print("Измменены ключи:", i)
+                        self.config.recoveryLoseKeyAndValue(local_key, i, Config.configProgram[local_key].get(i,""))
+
+        """
+        Проверка всех значений
+        """
+
+        for key_program in data.keys():
+            for key_value in data[key_program].keys():
+                value_config = data[key_program].get(key_value,"")
+                if key_value in Config.keys_for_unnecessary_data[key_program]:
+                    if value_config == "" or value_config == []:
+                        if key_program == "Program:":
+                            self.config.recoveryLoseKeyAndValue(key_program,key_value, Config.configProgram[key_program].get(key_value, ""))
+                        else:
+                            self.availability_of_required_data = False
+                            recovery_data_inputs[key_program].append(key_value)
+        self.recovery_data_inputs(recovery_data_inputs)
 
     def create_gui(self):
         pass
