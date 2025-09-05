@@ -127,6 +127,15 @@ class JsonConfig:
             self.setJPPathFile_output()
         self.save()
 
+    def setJPFilePathAndName_input(self, path):
+        full_path = path
+        self.data["ЖП"]["Path for input excel"] = full_path
+        self.data["ЖП"]["Input excel file"] = os.path.basename(full_path)
+
+        if str(self.data["ЖП"].get("Path for output excel", "")) == "":
+            self.setJPPathFile_output()
+        self.save()
+
     def setJPColumnName(self, columnName: str, columnValue: str):
         """
         Установка новых иминований столбцов, на вход ключ и знначение
@@ -192,6 +201,15 @@ class JsonConfig:
             self.setCzPathFile_output()
         self.save()
 
+    def setCzFilePathAndName_input(self, path):
+        full_path = path
+        self.data["СЗ"]["Path for input excel"] = full_path
+        self.data["СЗ"]["Input excel file"] = os.path.basename(full_path)
+
+        if str(self.data["СЗ"].get("Path for output excel", "")) == "":
+            self.setJPPathFile_output()
+        self.save()
+
     def setCzColumnName(self, columnName: str, columnValue):
         """
         Установка новых иминований столбцов, на вход ключ и знначение
@@ -245,6 +263,17 @@ class JsonConfig:
     Для BAM
     
     """
+
+    def setBAMFilePathAndName_input(self, path):
+        full_path = path
+        self.data["BAM"]["Path for input excel"] = full_path
+        self.data["BAM"]["Name input excel file"] = os.path.basename(full_path)
+        print(os.path.basename(full_path), "setBAMFilePathAndName_input")
+
+        if str(self.data["BAM"].get("Path for output excel", "")) == "":
+            self.setBAMPathFile_output()
+        self.save()
+
     def setBAMFilePathAndName(self):
         def updatePath():
             messagebox.showwarning("Внимание!",
@@ -286,6 +315,7 @@ class JsonConfig:
 
     def getBAMNameFile_input(self):
         data = self.data["BAM"]
+        print("getBAMNameFile_input", str(data.get("Name input excel file", "")))
         return str(data.get("Name input excel file", ""))
 
     def getBAMNameFile_output(self):
@@ -299,8 +329,10 @@ class JsonConfig:
         data = self.data["BAM"]
         return str(data.get("Path for output excel", ""))
 
-    def getBAMColumnName(self, columnName: str):
+    def getBAMColumnName(self, columnName: str, intOrlist: int= 0):
         data = self.data["BAM"]
+        if intOrlist:
+            return data.get(columnName, "")
         return str(data.get(columnName, ""))
 
 

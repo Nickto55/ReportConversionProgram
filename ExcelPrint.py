@@ -2,15 +2,35 @@ import pandas as pd
 from openpyxl import load_workbook
 import os
 
+from openpyxl.styles import PatternFill, Font
+from openpyxl.utils import get_column_letter
+
+import JsonWork
+
+
+def auto_fit_columns(sheet):
+    for column_cells in sheet.columns:
+        max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
+        adjusted_width = (max_length)  # Немного увеличим для красоты
+        sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = adjusted_width
+
+
 
 class ExcelWriter:
-    def __init__(self, file_path):
+    def __init__(self, file_path, min_prog: str = None):
         """
         Инициализация класса для работы с Excel файлом
 
         :param file_path: Полный путь к Excel файлу
         """
         self.file_path = file_path
+        self.min_prog = min_prog
+
+        self.fill_color1 = PatternFill(start_color="6f747c", fill_type="solid")
+        self.fill_color2 = PatternFill(start_color="aaadb2", fill_type="solid")
+        self.fill_color3 = PatternFill(start_color="d9d9d9", fill_type="solid")
+
+        self.config = JsonWork.JsonConfig()
 
     def write_to_sheet(self, data, sheet_name, start_row=1, start_col=1):
         """
@@ -42,25 +62,74 @@ class ExcelWriter:
                             sheet.cell(row=r_idx, column=c_idx, value=value)
                 else:
                     # Если данные в формате списка списков
-                    for r_idx, row in enumerate(data, start=start_row):
-                        for c_idx, value in enumerate(row, start=start_col):
-                            sheet.cell(row=r_idx, column=c_idx, value=value)
+                    print(self.min_prog)
+                    if self.min_prog is None:
+                        for r_idx, row in enumerate(data, start=start_row):
+                            for c_idx, value in enumerate(row, start=start_col):
+                                sheet.cell(row=r_idx, column=c_idx, value=value)
+                    else:
+                        if self.min_prog == "BAM":
+                            row_pack_h = 1
+                            row_pack_d = 1
+                            for r_idx, row in enumerate(data, start=start_row):
+                                for c_idx, value in enumerate(row, start=start_col):
+                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                    if c_idx == 1 and value != "" and value != "/../":
+                                        row_pack_h = r_idx
+                                    if c_idx == 1 and value == "/../":
+                                        row_pack_d = r_idx
+                                        cell = sheet.cell(row=r_idx, column=c_idx, value="")
+                                    if c_idx == 1:
+                                        cell.fill = self.fill_color3
+                                        cell.font = Font(color="f2ecde")
+                                    if r_idx == row_pack_h:
+                                        cell.fill = self.fill_color1
+                                        cell.font = Font(color="f2ecde")
+                                    elif r_idx == row_pack_d:
+                                        cell.fill = self.fill_color2
+                                        cell.font = Font(color="000000")
+                            auto_fit_columns(sheet)
+                            sheet.column_dimensions['A'].width = 8
+                            sheet.column_dimensions['B'].width = 26
+                            sheet.column_dimensions['D'].width = 32
+                            sheet.column_dimensions['E'].width = 35
+                        elif self.min_prog == "Jp":
+                            for r_idx, row in enumerate(data, start=start_row):
+                                for c_idx, value in enumerate(row, start=start_col):
+                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                    if c_idx == 2 and value!="":
+                                        cell.fill = self.fill_color3
+                                        cell.font = Font(color="000000")
+                                    if (r_idx == 1 or r_idx== 5 or r_idx==5+3+int(self.config.getJPColumnName("Table of contents: List_date")))and value!="":
+                                        cell.fill = self.fill_color1
+                                        cell.font = Font(color="f2ecde")
+                            auto_fit_columns(sheet)
+                        elif self.min_prog == "Cz":
+                            for r_idx, row in enumerate(data, start=start_row):
+                                for c_idx, value in enumerate(row, start=start_col):
+                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                    if r_idx == 3 and value!="":
+                                        cell.fill = self.fill_color3
+                                        cell.font = Font(color="000000")
+                                    if r_idx == 1 or c_idx == 1:
+                                        cell.fill = self.fill_color1
+                                        cell.font = Font(color="f2ecde")
+                            auto_fit_columns(sheet)
 
-                # Сохраняем книгу
                 book.save(self.file_path)
 
             else:
-                # Если файл не существует, создаем новый
                 if isinstance(data, pd.DataFrame):
                     with pd.ExcelWriter(self.file_path, engine='openpyxl') as writer:
                         data.to_excel(writer, sheet_name=sheet_name, startrow=start_row - 1, startcol=start_col - 1,
                                       index=False)
                 else:
-                    # Преобразуем список списков в DataFrame для удобства
                     df = pd.DataFrame(data)
                     with pd.ExcelWriter(self.file_path, engine='openpyxl') as writer:
                         df.to_excel(writer, sheet_name=sheet_name, startrow=start_row - 1, startcol=start_col - 1,
                                     index=False)
+
+
 
             print(f"Данные успешно записаны в лист '{sheet_name}' файла {self.file_path}")
 

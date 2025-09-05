@@ -2,7 +2,7 @@ import os
 import sys
 import tkinter as tk
 from datetime import date, timedelta, datetime
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, Label, Scrollbar, StringVar, Button, Spinbox
 
 import pandas as pd
 import plyer
@@ -62,10 +62,44 @@ class CzMain:
         self.search = Search.SearchCz()
         self.data = self.search.get_dict_all_data()
         self.hearders: list = self.search.get_headers()
+        print(self.hearders)
         self.columns = []
         self.accepted_no_repit = None
         self.accepted_chuse_user = accepted_chuse_user
         self.rc_no_repit = None
+
+    def recovery_lose_hearder(self, lose_helder_in_program: list, lose_helder_in_config: list):
+        def command_button(header, header_in_configs):
+            hearders_in_config = [
+                [self.config.getCzColumnName("Table of contents: Close"), "Table of contents: Close"],
+                [self.config.getCzColumnName("Table of contents: RC"),"Table of contents: RC"],
+                [self.config.getCzColumnName("Table of contents: Accepted"),'"Table of contents: Accepted"'],
+                [self.config.getCzColumnName("Table of contents: DCE"),"Table of contents: DCE"],
+                [self.config.getCzColumnName("Table of contents: Done"),"Table of contents: Done"],
+                [self.config.getCzColumnName("Table of contents: Date writer"),"Table of contents: Date writer"]
+            ]
+            for i in hearders_in_config:
+                if header_in_configs == i[0]:
+                    self.config.setCzColumnName(i[1], header)
+                    break
+
+        root = tk.Toplevel(self.parent)
+        root.title("Изменение заголовков")
+        root.geometry("600x300")
+        lose_helder_in_program_VAR = StringVar()
+        for i in lose_helder_in_program:
+            lose_helder_in_program_VAR.set(str(i))
+
+        print(lose_helder_in_program_VAR.get())
+
+        for header_in_config in lose_helder_in_config:
+            # for header_in_program in lose_helder_in_program:
+            label_rec = Label(root, text=f"{header_in_config} это: ")
+            label_rec.place(x=5, y=5)
+            skrol_rec = Spinbox(root, values=lose_helder_in_program, )
+            skrol_rec.place(x=155, y=5,width=100)
+        button_save = Button(root, text="Сохранить" , command=lambda : command_button(skrol_rec.get(), header_in_config))
+        button_save.place(x=5,y=35)
 
     def main(self):
         result = []
@@ -90,36 +124,70 @@ class CzMain:
         pos_accepted = 0
         pos_date = 0
 
+        hearder_list = self.hearders.copy()
+        hearders_in_config = [
+            self.config.getCzColumnName("Table of contents: Close"),
+            self.config.getCzColumnName("Table of contents: RC"),
+            self.config.getCzColumnName("Table of contents: Accepted"),
+            self.config.getCzColumnName("Table of contents: DCE"),
+            self.config.getCzColumnName("Table of contents: Done"),
+            self.config.getCzColumnName("Table of contents: Date writer")
+        ]
+
         # Определяем позиции колонок
         for hearder in self.hearders:
             if hearder == self.config.getCzColumnName("Table of contents: Close"):
                 pos_close = self.hearders.index(hearder)
+                if pos_close != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
             if hearder == self.config.getCzColumnName("Table of contents: RC"):
                 self.columns.append(hearder)
                 pos_rc = self.hearders.index(hearder)
+                if pos_rc != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
             if hearder == self.config.getCzColumnName("Table of contents: Accepted"):
                 self.columns.append(hearder)
                 pos_accepted = self.hearders.index(hearder)
+                if pos_accepted != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
             if hearder == self.config.getCzColumnName("Table of contents: DCE"):
                 pos_dse = self.hearders.index(hearder)
+                if pos_dse != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
             if hearder == self.config.getCzColumnName("Table of contents: Done"):
                 pos_done = self.hearders.index(hearder)
+                if pos_done != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
             if hearder == self.config.getCzColumnName("Table of contents: Date writer"):
                 pos_date = self.hearders.index(hearder)
+                if pos_date != 0:
+                    hearder_list.remove(hearder)
+                    hearders_in_config.remove(hearder)
 
-        if 0 in [pos_close, pos_rc, pos_accepted, pos_dse, pos_done, pos_date]:
-            messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия заголовков")
+        list_pos_lose = [pos_close, pos_rc, pos_accepted, pos_dse, pos_done, pos_date]
+
+        if 0 in list_pos_lose:
+            for herder_lose in range(len(list_pos_lose)):
+                if list_pos_lose[herder_lose] == 0:
+                    self.recovery_lose_hearder(hearder_list, hearders_in_config)
+                    messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия заголовков")
+                    return ["ОБНОВЛЕНИЕ ДАННЫХ КОНФИГА, перезапустите программу для результата"]
 
         self.search.filter_and_save_columns(self.columns)
 
         rc_no_repit = self.search.get_colum(self.columns[0], foc_mode=1)
         accepted_no_repit = self.search.get_colum(self.columns[1], foc_mode=1)
 
-        """ Если вдруг надо будет автоматизировать выбор
-        if "[]" == self.config.getCzColumnName("Table of contents: Rc full value"):
-            self.config.setCzColumnName("Table of contents: Rc full value", rc_no_repit)
-        if "[]" == self.config.getCzColumnName("Table of contents: Accepted full value"):
-            self.config.setCzColumnName("Table of contents: Accepted full value", rc_no_repit)"""
+        # # """ Если вдруг надо будет автоматизировать выбор"""
+        # if "[]" == self.config.getCzColumnName("Table of contents: Rc full value"):
+        #     self.config.setCzColumnName("Table of contents: Rc full value", rc_no_repit)
+        # if "[]" == self.config.getCzColumnName("Table of contents: Accepted full value"):
+        #     self.config.setCzColumnName("Table of contents: Accepted full value", rc_no_repit)
 
         self.rc_no_repit = rc_no_repit
         self.accepted_no_repit = accepted_no_repit

@@ -2,20 +2,21 @@ configProgram = {
     "Program:": {
         "Main name": "ReportConversionProgram",
         "GitHub:": r"https://github.com/Nickto55/ReportConversionProgram.git",
-        "Version": "0.3:1",
-        "Config version": "0.2",
+        "Version": "0.4:4",
+        "Config version": "0.4",
         "Assembly name": "Good Morning",
 
-        "Size by X": 300,
-        "Size by Y": 100
+        "Size by X": 800,
+        "Size by Y": 340
 
     },
     "ЖП": {
-        "JP":"JP",
+        "JP": "JP",
         "Input excel file": "",
         "Path for input excel": r"",
         "Name for output excel": r"ReportConversionProgram.xlsx",
         "Path for output excel": r"",
+
         "Table of contents: Date": "Дата",
         "Table of contents: Date removed": "Дата выполнения:",
         "Table of contents: DCE": "ДСЕ",
@@ -24,10 +25,11 @@ configProgram = {
         "Table of contents: Namber": "номер ",
         "Table of contents: Name": "Наименов.",
         "Table of contents: Translation": "Перевод",
+
         "Table of contents: List_date": 4
     },
     "СЗ": {
-        "CZ":"CZ",
+        "CZ": "CZ",
         "Input excel file": "",
         "Path for input excel": r"",
         "Name for output excel": r"ReportConversionProgram.xlsx",
@@ -37,7 +39,7 @@ configProgram = {
         "Table of contents: DCE": "ДСЕ",
         "Table of contents: Accepted": "Подписано",
         "Table of contents: RC": "РЦ",
-        "Table of contents: Close": "Закрыто письмо",
+        "Table of contents: Close": "Закрыто",
         "Table of contents: Done": "Выполнено",
         "Table of contents: Date writer": "Дата пиьсма",
 
@@ -47,6 +49,7 @@ configProgram = {
         "RC search parameters: Rc foc value": ["11102", "11403"],
         "RC search parameters: Rc toc value": ["11402"],
         "RC search parameters: Rc poc value": ["11404"],
+
         "RC search parameters: Rc 'rc_11102' value": ["11102"],
         "RC search parameters: Rc 'rc_11402' value": ["11402"],
         "RC search parameters: Rc 'rc_11403' value": ["11403"],
@@ -65,6 +68,7 @@ configProgram = {
         "Path for output excel": r"",
 
         "Table of contents: Date": "Дата",
+        "Table of contents: listes_excel": ["ФОЦ", "ТОЦ", "ПОЦ"],
         "Table of contents: List_date": 4
     }
 }
@@ -89,6 +93,13 @@ keys_for_unnecessary_data = {
         "Input excel file",
         "Path for input excel",
         "Name for output excel",
+        "Path for output excel"
+    ],
+    "BAM": [
+        "Name input excel file",
+        "Name output excel",
+
+        "Path for input excel",
         "Path for output excel"
     ]
 }

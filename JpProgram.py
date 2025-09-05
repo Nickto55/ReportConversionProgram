@@ -58,7 +58,7 @@ class JpMain:
             if self.data.get(0, "").get(i, "") == self.config.getJPColumnName(
                     "Table of contents: Question removed Full name"):
                 pos_removed = i
-            if self.data.get(0, "").get(i, "") in self.config.getJPColumnName("Table of contents: Translation"):
+            if str(self.data.get(0, "").get(i, "")) in str(self.config.getJPColumnName("Table of contents: Translation")):
                 pos_conversion = i
             if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: Date removed"):
                 pos_removed_date = i
@@ -201,7 +201,6 @@ class JpMain:
         count_column1 = len(result1[0])
         count_column2 = len(result2[0])
         sum_count_column = len(result1[0]) + len(result2[0]) + 2
-        print(sum_count_column)
 
         """
         2 версия

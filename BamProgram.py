@@ -56,10 +56,11 @@ class BamMain:
     def __init__(self):
         self.config = JsonConfig()
 
-        self.listes_excel = ["ФОЦ", "ТОЦ", "ПОЦ"]
+        self.listes_excel = self.config.getBAMColumnName("Table of contents: listes_excel", intOrlist=1)
         """Надо изменить на конфиг"""
 
         self.search = None
+        self.listes_excel_last = ""
 
     def headers_sort(self, headers):
         headers.sort()
@@ -106,9 +107,13 @@ class BamMain:
         count_up = 0
         count_dse2 = 0
         count_up2 = 0
+
+        dete_last = 0
         for i_sort in self.headers:
-            if i_sort_last != i_sort:
-                result.append(["","ДСЕ:","УП:"])
+            if i_sort_last != i_sort or self.listes_excel_last != listes_excel:
+                if self.listes_excel_last != listes_excel:
+                    self.listes_excel_last = listes_excel
+                result.append(["/../","","","","","","","",""])
                 row_count += 1
                 row_for_count = row_count-1
             for row in self.data.values():
@@ -122,13 +127,14 @@ class BamMain:
                     row[self.config.getBAMColumnName("Table of contents: Date")] = date_ref(
                         row.get(self.config.getBAMColumnName("Table of contents: Date"), ""), varibel=1)
                     row = list(row.values())[1:]
-                    count_up += row[5]
+                    if int(row[5]) != 0:
+                        count_up += row[5]
+                        count_dse +=1
                     row.insert(0, "")
-                    count_dse +=1
                     result.append(row)
             i_sort_last = i_sort
-            result[row_for_count].insert(2,  count_dse-count_dse2)
-            result[row_for_count].insert(4,  count_up-count_up2)
+            result[row_for_count].insert(3,  count_dse-count_dse2)
+            result[row_for_count].insert(6,  count_up-count_up2)
             count_dse2 = count_dse
 
             count_up2 = count_up
@@ -141,8 +147,11 @@ class BamMain:
 
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
-            result.append([listes_excel])
+            i:list
             for i in res:
+                if "№" in i:
+                    i.remove("№")
+                    i.insert(0,listes_excel)
                 result.append(i)
             result.append([])
 
