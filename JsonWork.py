@@ -36,8 +36,10 @@ class JsonConfig:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
 
         try:
-            if self.getConfigVersionConfig() < float(Config.configProgram["Program:"].get("Config version", "").replace(":","")):
-                messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг может быть не совместим")
+            if self.getConfigVersionConfig() < float(
+                    Config.configProgram["Program:"].get("Config version", "").replace(":", "")):
+                messagebox.showwarning("Внимание",
+                                       "Версия файла конфига ниже чем версия программы, конфиг может быть не совместим")
                 return
         except:
             messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг не совместим")
@@ -68,16 +70,16 @@ class JsonConfig:
         return self.data
 
     def recoveryLoseKeyAndValue(self, dictionary: str, key_for_dictionary: str, value_for_key: str):
-        print("JsonWork, config, recoveryLoseKeyAndValue",dictionary, key_for_dictionary,value_for_key)
+        print("JsonWork, config, recoveryLoseKeyAndValue", dictionary, key_for_dictionary, value_for_key)
         self.data[dictionary][key_for_dictionary] = value_for_key
         self.save()
-
 
     """
     
     Конфиг основной программы
     
     """
+
     def setConfigMainProgram(self):
 
         if str(self.data["Program:"].get("Assembly name", "")) == "":
@@ -88,24 +90,31 @@ class JsonConfig:
         self.data["Program:"]["Assembly name"] = "ReportConversionProgram"
         self.save()
 
-    def getConfigNameAssemblyProgram(self): return str(self.data["Program:"].get("Assembly name", ""))
+    def getConfigNameAssemblyProgram(self):
+        return str(self.data["Program:"].get("Assembly name", ""))
 
-    def getConfigSizeXProgram(self): return int(self.data["Program:"].get("Size by X", ""))
-    def getConfigSizeYProgram(self): return int(self.data["Program:"].get("Size by Y", ""))
+    def getConfigsimbaProgram(self):
+        return int(self.data["Program:"].get("Cimb plus", ""))
 
-    def getConfigVersionProgram(self):return float(self.data["Program:"].get("Version", "").replace(":",""))
-    def getConfigVersionConfig(self):return float(self.data["Program:"].get("Config version", "").replace(":",""))
+    def getConfigSizeXProgram(self):
+        return int(self.data["Program:"].get("Size by X", ""))
+
+    def getConfigSizeYProgram(self):
+        return int(self.data["Program:"].get("Size by Y", ""))
+
+    def getConfigVersionProgram(self):
+        return float(self.data["Program:"].get("Version", "").replace(":", ""))
+
+    def getConfigVersionConfig(self):
+        return float(self.data["Program:"].get("Config version", "").replace(":", ""))
 
     def setConfigSizeXProgram(self, modification):
         self.data["Program:"]["Size by X"] = modification
         self.save()
+
     def setConfigSizeYProgram(self, modification):
         self.data["Program:"]["Size by Y"] = modification
         self.save()
-
-
-
-
 
     """
     
@@ -145,6 +154,7 @@ class JsonConfig:
         """
         self.data["ЖП"][columnName] = columnValue
         self.save()
+
     def setJPNameFile_output(self, name: str):
         """
         Установка нового имени
@@ -172,6 +182,7 @@ class JsonConfig:
     def getJPPathFile_input(self):
         data = self.data["ЖП"]
         return str(data.get("Path for input excel", ""))
+
     def getJPPathFile_output(self):
         data = self.data["ЖП"]
         return str(data.get("Path for output excel", ""))
@@ -179,7 +190,6 @@ class JsonConfig:
     def getJPColumnName(self, columnName: str):
         data = self.data["ЖП"]
         return str(data.get(columnName, ""))
-
 
     """
     
@@ -252,7 +262,7 @@ class JsonConfig:
         data = self.data["СЗ"]
         return str(data.get("Path for output excel", ""))
 
-    def getCzColumnName(self, columnName: str, neeed_list:int=0):
+    def getCzColumnName(self, columnName: str, neeed_list: int = 0):
         data = self.data["СЗ"]
         if neeed_list:
             return data.get(columnName, "")
@@ -297,6 +307,7 @@ class JsonConfig:
         """
         self.data["BAM"][columnName] = columnValue
         self.save()
+
     def setBAMNameFile_output(self, name: str):
         """
         Установка нового имени
@@ -325,15 +336,26 @@ class JsonConfig:
     def getBAMPathFile_input(self):
         data = self.data["BAM"]
         return str(data.get("Path for input excel", ""))
+
     def getBAMPathFile_output(self):
         data = self.data["BAM"]
         return str(data.get("Path for output excel", ""))
 
-    def getBAMColumnName(self, columnName: str, intOrlist: int= 0):
+    def getBAMColumnName(self, columnName: str, intOrlist: int = 0):
         data = self.data["BAM"]
         if intOrlist:
             return data.get(columnName, "")
         return str(data.get(columnName, ""))
+
+    """
+    
+    Для Ge
+    
+    """
+
+    def getSheetNameList(self):
+        data = self.data["Ge"]
+        return data.get("Sheet name list", "")
 
 
 if __name__ == "__main__":

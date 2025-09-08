@@ -3,11 +3,12 @@ configProgram = {
         "Main name": "ReportConversionProgram",
         "GitHub:": r"https://github.com/Nickto55/ReportConversionProgram.git",
         "Version": "0.4:4",
-        "Config version": "0.4",
+        "Config version": "0.5",
         "Assembly name": "Good Morning",
 
         "Size by X": 800,
-        "Size by Y": 340
+        "Size by Y": 340,
+        "Cimb plus":4
 
     },
     "ЖП": {
@@ -70,8 +71,12 @@ configProgram = {
         "Table of contents: Date": "Дата",
         "Table of contents: listes_excel": ["ФОЦ", "ТОЦ", "ПОЦ"],
         "Table of contents: List_date": 4
+    },
+    "Ge":{
+        "Sheet name list": ["ЖП","СЗ","Бам по УП"]
     }
 }
+        # "Sheet name list": ["ЖП","СЗ","Бам по УП","Общая информация"]
 
 keys_for_unnecessary_data = {
     "Program:": [

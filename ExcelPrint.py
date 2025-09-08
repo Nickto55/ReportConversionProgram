@@ -10,8 +10,9 @@ import JsonWork
 
 def auto_fit_columns(sheet):
     for column_cells in sheet.columns:
+        koo = JsonWork.JsonConfig()
         max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
-        adjusted_width = (max_length)  # Немного увеличим для красоты
+        adjusted_width = (max_length + koo.getConfigsimbaProgram())  # Немного увеличим для красоты
         sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = adjusted_width
 
 

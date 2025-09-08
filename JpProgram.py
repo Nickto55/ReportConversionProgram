@@ -51,6 +51,7 @@ class JpMain:
         pos_removed = 0
         pos_conversion = 0
         pos_removed_date = 0
+        pos_add_date = 0
         pos_dse = 0
 
         # Определяем позиции колонок
@@ -62,6 +63,8 @@ class JpMain:
                 pos_conversion = i
             if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: Date removed"):
                 pos_removed_date = i
+            if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: Date"):
+                pos_add_date = i
             if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: DCE"):
                 pos_dse = i
 
@@ -96,6 +99,7 @@ class JpMain:
                         date_stats[truncated_date] = {
                             "count_removed": 0,
                             "count_conversion": 0,
+                            "count_date_add": 0,
                             "count": 0
                         }
 
@@ -106,13 +110,22 @@ class JpMain:
                         date_stats[truncated_date]["count_removed"] += 1
                         if data.get(pos_conversion, "") == "+":
                             date_stats[truncated_date]["count_conversion"] += 1
+        for i in self.data:
+            data = self.data.get(i, "")
+            date_dse_value = data.get(pos_dse, "")
+            date_add = data.get(pos_add_date, "")
+            if not pd.isna(date_dse_value):
+                truncated_date = str(date_add)[:len(date_list[0])]
+                if truncated_date in date_list:
+                    date_stats[truncated_date]["count_date_add"] += 1
 
-        result.append(["Задач", "Переводов"])
+
+        result.append(["Задач", "Переводов",""])
         result.append([count_removed, count_conversion])
 
-        result.append(["", ""])
-        result.append(["", ""])
-        result.append(["Дата", "Вып. Задач"])
+        result.append(["", "", ""])
+        result.append(["", "", ""])
+        result.append(["Дата", "Вып. Задач", "Доб. Задач"])
 
         # Формируем результат
         for date in date_list:
@@ -120,10 +133,11 @@ class JpMain:
                 stats = date_stats[date]
                 result.append([
                     date,
-                    stats["count"]
+                    stats["count"],
+                    stats["count_date_add"]
                 ])
             else:
-                result.append([date, "-"])
+                result.append([date, 0,0])
 
         # # Выводим результат
         # for row in result:
@@ -213,7 +227,10 @@ class JpMain:
                     continue
                 column -= 1
                 if column < len(result1[0]):
-                    res_row.append(result1[row][column])
+                    try:
+                        res_row.append(result1[row][column])
+                    except:
+                        pass
                 else:
                     res_row.append("")
             result.append(res_row)
