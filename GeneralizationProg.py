@@ -1,6 +1,8 @@
 import calendar
 from datetime import datetime as dt
 
+import pandas as pd
+
 import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchGe
@@ -81,7 +83,7 @@ class GeneProg:
                 for r_idx, row in enumerate(self.data_jp, 1):
                     for value in self.data_jp[row]:
                         if r_idx == 2:
-                            result_row.append(value)
+                            result_row.append(self.data_jp[0].get("Задач", ""))
                             break
 
 
@@ -94,39 +96,68 @@ class GeneProg:
         result.append(result_row)
 
 
-        result_row = ["", "", "выполнено ЖП"]
-        print(last_month, now_month)
+        result_row = ["", "", "выполнено ЖП","", ""]
+        # print(last_month, now_month)
+        for i in range(33):
+            result_row.append("")
 
 
-        for i in range(3, 38):
-            continue_value = False
-            for r_idx, row in enumerate(self.data_jp):
-                if continue_value:
+
+        for key_row in self.data_jp.keys():
+            varibel_break = False
+            for c_idx in self.data_jp[key_row].keys():
+                if key_row<3:
+                    continue
+                if pd.isna(self.data_jp[key_row].get("Задач", "")):
                     break
-                for c_idx, value in enumerate(self.data_jp.get(row, "")):
-                    if continue_value:
-                        break
-                    if len(str(value))>7 and r_idx == 1:
-                        if result[-5][i] == int(str(value)[8:10]) and int(str(value)[5:7]) == now_month:
-                            for jk in self.data_jp[row]:
-                                print(jk, end=" ")
-                            print()
-                            result_row.append("здесь нужен вывод значения из соседней ячейки")
-                            continue_value = True
-                            break
-                        if result[-5][i] == int(str(value)[8:10]) and int(str(value)[5:7]) == last_month and i < 8:
-                            result_row.append("здесь нужен вывод значения из соседней ячейки")
-                            continue_value = True
-                            break
 
-            if not continue_value:
-                result_row.append("")
+                try:
+                    int(self.data_jp[key_row].get("Переводов", ""))
+                except:
+                    continue
+
+
+                if  varibel_break:
+                    result_row.append("")
+                    break
+                value = self.data_jp[key_row].get("Задач", "")
+                if len(str(value))>7:
+                    if int(str(value)[8:10]) in result[-5]  and int(str(value)[5:7]) == now_month:
+                        result_row[int(str(value)[8:10])+4+3]=(self.data_jp[key_row].get("Переводов", ""))
+                        varibel_break =True
+                        break
+                    elif int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == last_month and result[-5].index(int(str(value)[8:10])) < 8:
+                        result_row[int(str(value)[8:10])-29+5]=(self.data_jp[key_row].get("Переводов", ""))
+                        varibel_break =True
+                        break
+
+
+        # print(result_row)
         result.append(result_row)
+
+
+        for i in range(3): result.append(result_row1.copy())
+        result[-1][0] = "ФОЦ"
+        count_titel = 0
+
+        result_row = ["", "", "выполнено за день, ДСЕ"]
+        for key_row in self.data_bam.values():
+            for key_col in key_row.values():
+                print(key_col, end=", ")
+            print("\n")
+
+
+
+
+        # for key_row in self.data_jp.keys():
+        #     print(self.data_jp[key_row].get(5, ""))
 
 
 
         # for i in result:
         #     print(i)
+        result.append(result_row)
+
 
         return  result
 

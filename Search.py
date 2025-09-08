@@ -329,7 +329,20 @@ class SearchGe:
             elif sheet_name == sheet_name_list[2]: self.data_bam = data_and_name
             # elif data_and_name[0] == sheet_name_list[3]: self.data_ge = data_and_name[1]
 
-        return self.data_jp, self.data_cz, self.data_bam
+        result_data_jp = {}
+        for index, row in self.data_jp.iterrows():
+            result_data_jp[index] = row.to_dict()
+
+        result_data_cz = {}
+        for index, row in self.data_cz.iterrows():
+            result_data_cz[index] = row.to_dict()
+
+        result_data_bam = {}
+        for index, row in self.data_bam.iterrows():
+            result_data_bam[index] = row.to_dict()
+
+
+        return result_data_jp, result_data_cz, result_data_bam
 
 
     def load_excel(self, sheet_name: str = None):

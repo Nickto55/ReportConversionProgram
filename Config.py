@@ -106,5 +106,6 @@ keys_for_unnecessary_data = {
 
         "Path for input excel",
         "Path for output excel"
-    ]
+    ],
+    "Ge":[]
 }
