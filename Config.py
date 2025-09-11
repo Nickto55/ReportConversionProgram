@@ -73,7 +73,7 @@ configProgram = {
         "Table of contents: List_date": 4
     },
     "Ge":{
-        "Sheet name list": ["ЖП","СЗ","Бам по УП"]
+        "Sheet name list": ["ЖП","СЗ","Бам по УП", "Test"]
     }
 }
         # "Sheet name list": ["ЖП","СЗ","Бам по УП","Общая информация"]
