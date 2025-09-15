@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, BOTH, filedialog
 from tkinter.ttk import Progressbar
 
 import plyer
+import asyncio
 
 import Config
 import ExcelPrint
@@ -15,7 +16,8 @@ from datetime import datetime as dt
 from BamProgram import BamMain
 from CzProgram import CzMain
 from GeneralizationProg import GeneProg
-from JpProgram import JpMain
+import JpProgram
+
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -99,7 +101,7 @@ class Main_gui:
 
     def start_button_command(self):
         if self.ubroutine_Jp_var.get():
-            jp_prog = JpMain()
+            jp_prog = JpProgram.JpMain(root=self.root, )
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
 
@@ -866,7 +868,7 @@ class Main_gui:
         button_start.place(x=self.distance_x_root - 55, y=self.distance_y_root * 1 / 3 - 45, width=50)
 
     def change_value_progress_bar_var(self, value_pb):
-        self.brogressbar_value_var.set(value_pb)
+        self.root.after(0, lambda: self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb))
 
     def gui_debug_mode(self):
         parent = tk.Toplevel(self.root)
