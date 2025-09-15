@@ -821,11 +821,11 @@ class Main_gui:
 
         try:
             modification_time = os.path.getmtime(f"{os.getcwd()}/ReportConversionProgram.xlsx")
-            last_date_start = str(dt.fromtimestamp(modification_time))[:10]
+            last_date_start = str(dt.fromtimestamp(modification_time))
         except:
             last_date_start = "-"
 
-        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start}")
+        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
         label_time_last_start_program.place(x=0,y=15)
 
         """Созаем чеки"""
