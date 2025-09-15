@@ -111,17 +111,7 @@ class Main_gui:
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                      int(self.ubroutine_Bam_var.get())))
-            print(
-                100 // (int(self.ubroutine_Jp_var.get()) +
-                     int(self.ubroutine_Cz_var.get()) +
-                     int(self.ubroutine_Bam_var.get())),
-                int(self.ubroutine_Jp_var.get()) +
-                int(self.ubroutine_Cz_var.get()) +
-                int(self.ubroutine_Bam_var.get()),
-                int(self.ubroutine_Jp_var.get()),
-                int(self.ubroutine_Cz_var.get()),
-                int(self.ubroutine_Bam_var.get())
-            )
+
 
 
         if self.ubroutine_Cz_var.get():
@@ -131,17 +121,7 @@ class Main_gui:
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
-            print(
-                1 / (int(self.ubroutine_Jp_var.get()) +
-                     int(self.ubroutine_Cz_var.get()) +
-                     int(self.ubroutine_Bam_var.get())),
-                    int(self.ubroutine_Jp_var.get()) +
-                    int(self.ubroutine_Cz_var.get()) +
-                    int(self.ubroutine_Bam_var.get()),
-                    int(self.ubroutine_Jp_var.get()) ,
-                    int(self.ubroutine_Cz_var.get()) ,
-                    int(self.ubroutine_Bam_var.get())
-            )
+
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
@@ -149,10 +129,6 @@ class Main_gui:
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                        int(self.ubroutine_Bam_var.get())))
-            print(
-                1 /(int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                        int(self.ubroutine_Bam_var.get())),(int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
 
         ge_prog = GeneProg()
