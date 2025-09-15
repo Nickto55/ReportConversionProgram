@@ -1,5 +1,6 @@
 # import webbrowser
 import os
+import time
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH, filedialog
@@ -79,7 +80,7 @@ class Main_gui:
         Переменные
         
         """
-        self.brogressbar_value_var = IntVar(value=0)
+        self.brogressbar_value_var =  IntVar(value=0)
 
         self.modification = IntVar(value=1)
         self.ubroutine_Jp_var = BooleanVar(value=True)
@@ -108,8 +109,20 @@ class Main_gui:
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
             self.change_value_progress_bar_var(
-                100 // (int(self.ubroutine_Jp_var.get())+ int(self.ubroutine_Cz_var.get())+
-                           int(self.ubroutine_Bam_var.get())))
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                     int(self.ubroutine_Bam_var.get())))
+            print(
+                100 // (int(self.ubroutine_Jp_var.get()) +
+                     int(self.ubroutine_Cz_var.get()) +
+                     int(self.ubroutine_Bam_var.get())),
+                int(self.ubroutine_Jp_var.get()) +
+                int(self.ubroutine_Cz_var.get()) +
+                int(self.ubroutine_Bam_var.get()),
+                int(self.ubroutine_Jp_var.get()),
+                int(self.ubroutine_Cz_var.get()),
+                int(self.ubroutine_Bam_var.get())
+            )
+
 
         if self.ubroutine_Cz_var.get():
             cz_prog = CzMain(self.root)
@@ -118,6 +131,17 @@ class Main_gui:
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
+            print(
+                1 / (int(self.ubroutine_Jp_var.get()) +
+                     int(self.ubroutine_Cz_var.get()) +
+                     int(self.ubroutine_Bam_var.get())),
+                    int(self.ubroutine_Jp_var.get()) +
+                    int(self.ubroutine_Cz_var.get()) +
+                    int(self.ubroutine_Bam_var.get()),
+                    int(self.ubroutine_Jp_var.get()) ,
+                    int(self.ubroutine_Cz_var.get()) ,
+                    int(self.ubroutine_Bam_var.get())
+            )
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
@@ -125,6 +149,10 @@ class Main_gui:
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())))
+            print(
+                1 /(int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())),(int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
 
         ge_prog = GeneProg()
@@ -873,14 +901,17 @@ class Main_gui:
         down_frame.place(x=0, y=self.distance_y_root * 2 / 3, height=self.distance_y_root * 1 / 3,
                          width=self.distance_x_root)
 
-        progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
-        progressbar.place(x=5,y=0, width=785)
+        self.progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
+        self.progressbar.place(x=5,y=0, width=785)
 
         button_start = Button(down_frame, text="Начать", command=self.start_button_command)
         button_start.place(x=self.distance_x_root - 55, y=self.distance_y_root * 1 / 3 - 45, width=50)
 
     def change_value_progress_bar_var(self, value_pb):
-        self.root.after(0, lambda: self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb))
+        self.progressbar.place_forget()
+        self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb)
+        self.progressbar.place(x=5, y=0, width=785)
+        print(self.brogressbar_value_var.get())
 
     def gui_debug_mode(self):
         parent = tk.Toplevel(self.root)
