@@ -1,7 +1,9 @@
 # import webbrowser
+import os
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH, filedialog
+from tkinter.ttk import Progressbar
 
 import plyer
 
@@ -9,8 +11,10 @@ import Config
 import ExcelPrint
 # import plyer
 import JsonWork
+from datetime import datetime as dt
 from BamProgram import BamMain
 from CzProgram import CzMain
+from GeneralizationProg import GeneProg
 from JpProgram import JpMain
 
 
@@ -73,6 +77,8 @@ class Main_gui:
         Переменные
         
         """
+        self.brogressbar_value_var = IntVar(value=0)
+
         self.modification = IntVar(value=1)
         self.ubroutine_Jp_var = BooleanVar(value=True)
         self.ubroutine_Cz_var = BooleanVar(value=True)
@@ -106,6 +112,10 @@ class Main_gui:
             bam_prog = BamMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
+
+        ge_prog = GeneProg()
+        excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
+        excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
 
@@ -148,7 +158,7 @@ class Main_gui:
         Для определения какие данные в json файле отсутсдвуют для корректной работы подпрограмм:
         :return: None, если есть всё, или возвращения имяни не хватающего ключа
         """
-        recovery_data_inputs = {"Program:": [], "ЖП": [], "СЗ": [], "BAM": [], "Ge":[]}
+        recovery_data_inputs = {"Program:": [], "ЖП": [], "СЗ": [], "BAM": [], "Ge": []}
         data = self.config.getData()
         """
         Проверка наличия всех ключей, глубина = 2
@@ -408,20 +418,21 @@ class Main_gui:
                 self.config.setBAMColumnName("Table of contents: Date", entry_Date.get())
                 self.config.setBAMColumnName("Table of contents: listes_excel", entry_listes_excel.get().split(","))
 
-
                 dismiss(self.parent_label_column_BAM)
 
             def command_reset_button():
                 self.config.setBAMColumnName("Table of contents: Date",
-                                            Config.configProgram["BAM"].get("Table of contents: Date", ""))
+                                             Config.configProgram["BAM"].get("Table of contents: Date", ""))
                 self.config.setBAMColumnName("Table of contents: listes_excel",
-                                            Config.configProgram["BAM"].get("Table of contents: listes_excel", ""))
-
+                                             Config.configProgram["BAM"].get("Table of contents: listes_excel", ""))
 
                 entry_Date.delete(0, END)
                 entry_Date.insert(0, self.config.getBAMColumnName("Table of contents: Date"))
                 entry_listes_excel.delete(0, END)
-                entry_listes_excel.insert(0, self.config.getBAMColumnName("Table of contents: listes_excel").replace("[","").replace("]",""))
+                entry_listes_excel.insert(0,
+                                          self.config.getBAMColumnName("Table of contents: listes_excel").replace("[",
+                                                                                                                  "").replace(
+                                              "]", ""))
 
             if self.parent_label_column_BAM_bool:
                 self.parent_label_column_BAM.destroy()
@@ -450,8 +461,10 @@ class Main_gui:
                 entry_listes_excel = Entry(frame, width=28)
                 entry_listes_excel.grid(row=1, column=1)
                 entry_listes_excel.delete(0, END)
-                entry_listes_excel.insert(0, self.config.getBAMColumnName("Table of contents: listes_excel").replace("[","").replace("]",""))
-
+                entry_listes_excel.insert(0,
+                                          self.config.getBAMColumnName("Table of contents: listes_excel").replace("[",
+                                                                                                                  "").replace(
+                                              "]", ""))
 
                 button_reset_column = Button(frame, text="Сбросить всё", command=command_reset_button)
                 button_reset_column.grid(row=8, column=0, sticky="w")
@@ -779,6 +792,24 @@ class Main_gui:
         left_frame = LabelFrame(main_frame, text="Варианты программ:")
         left_frame.place(x=0, y=0, height=self.distance_y_root * 2 / 7, width=self.distance_x_root / 5)
 
+        left_down_frame = LabelFrame(main_frame, text="Информация:")
+        left_down_frame.place(x=0, y=100, height= self.distance_y_root * 2 / 3 -self.distance_y_root * 2 / 7 - 4, width=self.distance_x_root / 5)
+
+
+        """Получаем и выводим информацию"""
+        label_time_now = Label(left_down_frame, text=f"Cейчас: {str(dt.now())[:10]}")
+        label_time_now.place(x=0,y=0)
+
+
+        try:
+            modification_time = os.path.getmtime(f"{os.getcwd()}/ReportConversionProgram.xlsx")
+            last_date_start = str(dt.fromtimestamp(modification_time))[:10]
+        except:
+            last_date_start = "-"
+
+        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start}")
+        label_time_last_start_program.place(x=0,y=15)
+
         """Созаем чеки"""
         checkbut_jp = Checkbutton(left_frame, text="Jp", variable=self.ubroutine_Jp_var, onvalue=1)
         checkbut_jp.grid(row=0, column=0, sticky="w")
@@ -828,8 +859,14 @@ class Main_gui:
         down_frame.place(x=0, y=self.distance_y_root * 2 / 3, height=self.distance_y_root * 1 / 3,
                          width=self.distance_x_root)
 
+        progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
+        progressbar.place(x=5,y=0, width=785)
+
         button_start = Button(down_frame, text="Начать", command=self.start_button_command)
         button_start.place(x=self.distance_x_root - 55, y=self.distance_y_root * 1 / 3 - 45, width=50)
+
+    def change_value_progress_bar_var(self, value_pb):
+        self.brogressbar_value_var.set(value_pb)
 
     def gui_debug_mode(self):
         parent = tk.Toplevel(self.root)

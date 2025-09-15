@@ -326,7 +326,6 @@ class JsonConfig:
 
     def getBAMNameFile_input(self):
         data = self.data["BAM"]
-        print("getBAMNameFile_input", str(data.get("Name input excel file", "")))
         return str(data.get("Name input excel file", ""))
 
     def getBAMNameFile_output(self):

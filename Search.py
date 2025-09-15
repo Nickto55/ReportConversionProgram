@@ -6,7 +6,7 @@ import JsonWork
 
 
 class SearchBam:
-    def __init__(self,sheet_name):
+    def __init__(self, sheet_name):
         self.columns_save = []
         self.config = JsonWork.JsonConfig()
         self.file_path = self.config.getBAMPathFile_input()
@@ -310,6 +310,7 @@ class SearchCz:
     #         messagebox.showerror("Ошибка", f"Название столбцов не совпадают.\n {get_colum} в {self.columns_save} ")
     #         return None
 
+
 class SearchGe:
     def __init__(self):
         self.data_jp = None
@@ -320,14 +321,19 @@ class SearchGe:
 
         self.config = JsonWork.JsonConfig()
         self.file_path = self.config.getJPColumnName("Path for output excel")
+
     def sheet_name_list(self):
         sheet_name_list = self.config.getSheetNameList()
         for sheet_name in sheet_name_list:
             data_and_name = self.load_excel(sheet_name=sheet_name)
-            if sheet_name == sheet_name_list[0]:self.data_jp = data_and_name
-            elif sheet_name == sheet_name_list[1]: self.data_cz = data_and_name
-            elif sheet_name == sheet_name_list[2]: self.data_bam = data_and_name
-            elif sheet_name == sheet_name_list[3]: self.data_ge = data_and_name
+            if sheet_name == sheet_name_list[0]:
+                self.data_jp = data_and_name
+            elif sheet_name == sheet_name_list[1]:
+                self.data_cz = data_and_name
+            elif sheet_name == sheet_name_list[2]:
+                self.data_bam = data_and_name
+            elif sheet_name == sheet_name_list[3]:
+                self.data_ge = data_and_name
 
         result_data_jp = {}
         for index, row in self.data_jp.iterrows():
@@ -341,13 +347,14 @@ class SearchGe:
         for index, row in self.data_bam.iterrows():
             result_data_bam[index] = row.to_dict()
 
-        result_data_ge = {}
-        for index, row in self.data_ge.iterrows():
-            result_data_ge[index] = row.to_dict()
-
+        try:
+            result_data_ge = {}
+            for index, row in self.data_ge.iterrows():
+                result_data_ge[index] = row.to_dict()
+        except:
+            return result_data_jp, result_data_cz, result_data_bam, None
 
         return result_data_jp, result_data_cz, result_data_bam, result_data_ge
-
 
     def load_excel(self, sheet_name: str = None):
         """Загружает данные из Excel файла с указанного листа."""
@@ -361,10 +368,7 @@ class SearchGe:
             print(f"Ошибка при загрузке файла или листа: {e}")
             data = None
 
-
         return data
-
-
 
 
 """def get_sheet_names(self):

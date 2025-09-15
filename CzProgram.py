@@ -62,7 +62,6 @@ class CzMain:
         self.search = Search.SearchCz()
         self.data = self.search.get_dict_all_data()
         self.hearders: list = self.search.get_headers()
-        print(self.hearders)
         self.columns = []
         self.accepted_no_repit = None
         self.accepted_chuse_user = accepted_chuse_user
@@ -90,7 +89,6 @@ class CzMain:
         for i in lose_helder_in_program:
             lose_helder_in_program_VAR.set(str(i))
 
-        print(lose_helder_in_program_VAR.get())
 
         for header_in_config in lose_helder_in_config:
             # for header_in_program in lose_helder_in_program:
@@ -186,12 +184,17 @@ class CzMain:
         # # """ Если вдруг надо будет автоматизировать выбор"""
         # if "[]" == self.config.getCzColumnName("Table of contents: Rc full value"):
         #     self.config.setCzColumnName("Table of contents: Rc full value", rc_no_repit)
-        # if "[]" == self.config.getCzColumnName("Table of contents: Accepted full value"):
-        #     self.config.setCzColumnName("Table of contents: Accepted full value", rc_no_repit)
+        if "[]" == self.config.getCzColumnName("Table of contents: Accepted full value"):
+            self.config.setCzColumnName("Table of contents: Accepted full value", rc_no_repit)
 
         self.rc_no_repit = rc_no_repit
         self.accepted_no_repit = accepted_no_repit
 
+        """Проверка совпадения"""
+        list_full_accep = self.config.getCzColumnName("Table of contents: Accepted full value")
+        for i in self.rc_no_repit:
+            if not i in list_full_accep:
+                self.accepted_chuse_user = 1
         if self.accepted_chuse_user or "0" in [
             str(len(self.config.getCzColumnName("RC search parameters: Rc foc value", 1))),
             str(len(self.config.getCzColumnName("RC search parameters: Rc toc value", 1))),
@@ -203,6 +206,10 @@ class CzMain:
             str(len(self.config.getCzColumnName("Table of contents: Rc user chuse value", 1))),
             str(len(self.config.getCzColumnName("Table of contents: Accepted user chuse value", 1)))
         ]:
+
+
+
+
             """Надо разобраться"""
 
             gui = GuiManager(len(self.accepted_no_repit), len(self.rc_no_repit), self.parent)
@@ -216,6 +223,7 @@ class CzMain:
             root.mainloop()
 
             selected = gui.get_selected_values()
+            self.config.setCzColumnName("Table of contents: Accepted full value", self.rc_no_repit)
             self.config.setCzColumnName("Table of contents: Rc user chuse value", ["11102", "11403"])
             self.config.setCzColumnName("Table of contents: Accepted user chuse value", selected["accepted"])
 
@@ -831,7 +839,7 @@ if __name__ == "__main__":
     root = tk.Tk()
 
     config = JsonWork.JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
+    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Cz")
 
     run = CzMain(root)
     excelPr.write_to_sheet(run.main(), "СЗ")

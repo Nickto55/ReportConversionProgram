@@ -1,7 +1,7 @@
-import pandas as pd
-from openpyxl import load_workbook
 import os
 
+import pandas as pd
+from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
 
@@ -14,7 +14,6 @@ def auto_fit_columns(sheet):
         max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
         adjusted_width = (max_length + koo.getConfigsimbaProgram())  # Немного увеличим для красоты
         sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = adjusted_width
-
 
 
 class ExcelWriter:
@@ -30,6 +29,9 @@ class ExcelWriter:
         self.fill_color1 = PatternFill(start_color="6f747c", fill_type="solid")
         self.fill_color2 = PatternFill(start_color="aaadb2", fill_type="solid")
         self.fill_color3 = PatternFill(start_color="d9d9d9", fill_type="solid")
+        self.fill_color4 = PatternFill(start_color="808080", fill_type="solid")
+
+        self.alfavit = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
 
         self.config = JsonWork.JsonConfig()
 
@@ -63,7 +65,7 @@ class ExcelWriter:
                             sheet.cell(row=r_idx, column=c_idx, value=value)
                 else:
                     # Если данные в формате списка списков
-                    print(self.min_prog)
+                    print("self.min_prog: ", self.min_prog)
                     if self.min_prog is None:
                         for r_idx, row in enumerate(data, start=start_row):
                             for c_idx, value in enumerate(row, start=start_col):
@@ -98,10 +100,11 @@ class ExcelWriter:
                             for r_idx, row in enumerate(data, start=start_row):
                                 for c_idx, value in enumerate(row, start=start_col):
                                     cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if c_idx == 2 and value!="":
+                                    if c_idx == 2 and value != "":
                                         cell.fill = self.fill_color3
                                         cell.font = Font(color="000000")
-                                    if (r_idx == 1 or r_idx== 5 or r_idx==5+3+int(self.config.getJPColumnName("Table of contents: List_date")))and value!="":
+                                    if (r_idx == 1 or r_idx == 5 or r_idx == 5 + 3 + int(self.config.getJPColumnName(
+                                            "Table of contents: List_date"))) and value != "":
                                         cell.fill = self.fill_color1
                                         cell.font = Font(color="f2ecde")
                             auto_fit_columns(sheet)
@@ -109,13 +112,39 @@ class ExcelWriter:
                             for r_idx, row in enumerate(data, start=start_row):
                                 for c_idx, value in enumerate(row, start=start_col):
                                     cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if r_idx == 3 and value!="":
+                                    if r_idx == 3 and value != "":
                                         cell.fill = self.fill_color3
                                         cell.font = Font(color="000000")
                                     if r_idx == 1 or c_idx == 1:
                                         cell.fill = self.fill_color1
                                         cell.font = Font(color="f2ecde")
                             auto_fit_columns(sheet)
+                        elif self.min_prog == "Ge":
+                            for r_idx, row in enumerate(data, start=start_row):
+                                for c_idx, value in enumerate(row, start=start_col):
+                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                    if r_idx in [9, 14, 19, 24, 29]:
+                                        cell.fill = self.fill_color1
+                                        cell.font = Font(color="f2ecde")
+                                    if r_idx in [6, 0] and value != "":
+                                        cell.fill = self.fill_color1
+                                        cell.font = Font(color="f2ecde")
+                                    if (c_idx in [3, 0] and value != "") or(r_idx == 5 and c_idx > 8):
+                                        cell.fill = self.fill_color3
+                                        cell.font = Font(color="000000")
+                                    if r_idx == 5 and 5 < c_idx < 9:
+                                        cell.fill = self.fill_color4
+                                        cell.font = Font(color="000000")
+
+                                    if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}")
+                                    if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}+{self.alfavit[c_idx-10]}{r_idx}")
+                            auto_fit_columns(sheet)
+                            for i in self.alfavit:
+                                sheet.column_dimensions[f'{i}'].width = 3.7
+                            sheet.column_dimensions[f'f'].width = 3.7
+                            sheet.column_dimensions[f'g'].width = 3.7
+                            sheet.column_dimensions[f'h'].width = 3.7 + 7.0
+                            sheet.column_dimensions[f'i'].width = 3.7 + 7.0
 
                 book.save(self.file_path)
 
@@ -129,8 +158,6 @@ class ExcelWriter:
                     with pd.ExcelWriter(self.file_path, engine='openpyxl') as writer:
                         df.to_excel(writer, sheet_name=sheet_name, startrow=start_row - 1, startcol=start_col - 1,
                                     index=False)
-
-
 
             print(f"Данные успешно записаны в лист '{sheet_name}' файла {self.file_path}")
 

@@ -32,6 +32,10 @@ class GeneProg:
     def main(self):
         result = []
         result_row1 = ["" for i in range(38)]
+        result_row2 = ["" for i in range(8)]
+        result_row2.append(r"\..../")
+        for i in range(29):
+            result_row2.append(r"\.../")
         for i in range(4): result.append(result_row1.copy())
         date_str = str(dt.now())[:10]
         date_str_last = str(dt.now())[:10]
@@ -76,7 +80,7 @@ class GeneProg:
 
         result[-1][0] = "ЖП"
 
-        result_row = ["", "", "всего ЖП"]
+        result_row = ["", "", "Всего ЖП"]
 
         for i in range(3, 38):
             if result[-4][i] == int(str(dt.now())[8:10]):
@@ -92,7 +96,7 @@ class GeneProg:
 
         result.append(result_row)
 
-        result_row = ["", "", "выполнено ЖП", "", ""]
+        result_row = ["", "", "Выполнено ЖП", "", ""]
         # print(last_month, now_month)
         for i in range(33):
             result_row.append("")
@@ -128,7 +132,8 @@ class GeneProg:
         # print(result_row)
         result.append(result_row)
 
-        for i in range(3): result.append(result_row1.copy())
+        for i in range(2): result.append(result_row2.copy())
+        for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "ФОЦ"
         count_titel = 0
 
@@ -137,7 +142,7 @@ class GeneProg:
         toc_date_list = []
         poc_date_list = []
 
-        result_row = ["", "", "выполнено за день, ДСЕ", "", ""]
+        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
 
         for key_row in self.data_bam.values():
             for key_col in key_row.items():
@@ -201,7 +206,7 @@ class GeneProg:
                 result_row.append("")
 
         result.append(result_row)
-        result_row = ["", "", "выполнено за день, УП", "", ""]
+        result_row = ["", "", "Выполнено за день, УП", "", ""]
         for column in range(33):
             """ФОЦ"""
             dateList_cat = []
@@ -220,10 +225,11 @@ class GeneProg:
 
         result.append(result_row)
 
-        for i in range(3): result.append(result_row1.copy())
+        for i in range(2): result.append(result_row2.copy())
+        for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "ТОЦ"
 
-        result_row = ["", "", "выполнено за день, ДСЕ", "", ""]
+        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
 
         for column in range(33):
             """ТОЦ"""
@@ -243,7 +249,7 @@ class GeneProg:
                 result_row.append("")
 
         result.append(result_row)
-        result_row = ["", "", "выполнено за день, УП", "", ""]
+        result_row = ["", "", "Выполнено за день, УП", "", ""]
         for column in range(33):
             """ТОЦ"""
             dateList_cat = []
@@ -262,10 +268,11 @@ class GeneProg:
 
         result.append(result_row)
 
-        for i in range(3): result.append(result_row1.copy())
+        for i in range(2): result.append(result_row2.copy())
+        for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "ПОЦ"
 
-        result_row = ["", "", "выполнено за день, ДСЕ", "", ""]
+        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
 
         for column in range(33):
             """ПОЦ"""
@@ -284,7 +291,7 @@ class GeneProg:
                 result_row.append("")
 
         result.append(result_row)
-        result_row = ["", "", "выполнено за день, УП", "", ""]
+        result_row = ["", "", "Выполнено за день, УП", "", ""]
         for column in range(33):
             """ПОЦ"""
             dateList_cat = []
@@ -302,7 +309,8 @@ class GeneProg:
                 result_row.append("")
         result.append(result_row)
 
-        for i in range(3): result.append(result_row1.copy())
+        for i in range(2): result.append(result_row2.copy())
+        for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "СЗ"
 
         foc_search = "Дата:"
@@ -391,13 +399,24 @@ class GeneProg:
 
         result.append(result_row)
 
+        for i in range(2): result.append(result_row1.copy())
+        result.append(["" for i in range(59)])
+        result[-1].append("V2.01.not_color")
 
-        for key_row in self.data_ge.values():
-            for key_col in key_row.items():
-                pass
-            print(key_row)
+        if not self.data_ge is None:
+            for r_idx, row in enumerate(self.data_ge):
+                for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
+                    if len(result) > r_idx:
+                        if len(result[r_idx]) > c_idx:
+                            if c_idx < 3 or r_idx<3:
+                                continue
+                            if result[r_idx][c_idx] == "" and not pd.isna(self.data_ge[r_idx-1].get(f"Unnamed: {c_idx}", "")):
+                                result[r_idx][c_idx] = self.data_ge[r_idx-1].get(f"Unnamed: {c_idx}", "")
 
-        print(self.data_ge[3].get(f"Unnamed: {8}",""))
+
+
+
+            # по оси у -2 по оси х -1
 
         return result
 
@@ -405,6 +424,6 @@ class GeneProg:
 if __name__ == "__main__":
     run = GeneProg()
     config = JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
+    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
 
-    excelPr.write_to_sheet(run.main(), "Test")
+    excelPr.write_to_sheet(run.main(), "Общая информация")

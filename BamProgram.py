@@ -56,7 +56,7 @@ class BamMain:
     def __init__(self):
         self.config = JsonConfig()
 
-        self.listes_excel = self.config.getBAMColumnName("Table of contents: listes_excel", intOrlist=1)
+        self.listes_excel = self.config.getBAMColumnName( "Table of contents: listes_excel", intOrlist=1)
         """Надо изменить на конфиг"""
 
         self.search = None
