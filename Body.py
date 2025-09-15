@@ -101,19 +101,28 @@ class Main_gui:
 
     def start_button_command(self):
         if self.ubroutine_Jp_var.get():
-            jp_prog = JpProgram.JpMain(root=self.root, )
+            jp_prog = JpProgram.JpMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get())+ int(self.ubroutine_Cz_var.get())+
+                           int(self.ubroutine_Bam_var.get())))
 
         if self.ubroutine_Cz_var.get():
             cz_prog = CzMain(self.root)
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
             excelPr.write_to_sheet(cz_prog.main(), "СЗ")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())))
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())))
 
         ge_prog = GeneProg()
         excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")

@@ -152,9 +152,6 @@ class JpMain:
         # # Выводим результат
         # for row in result:
         #     print(row)
-        if not pd.isna(self.root):
-            self.pb.change_value_progress_bar_var(30)
-            print('KJSDJKALDLALKJSDAASDJKLSADKLJSDAKJLASJLK')
         return result
 
     def second_t(self):
