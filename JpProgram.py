@@ -41,10 +41,6 @@ class JpMain:
         self.config = JsonWork.JsonConfig()
         self.root = root
 
-        if not pd.isna(root):
-            self.pb = Body.Main_gui(root)
-            if pd.isna(count_prog):
-                self.pb.change_value_progress_bar_var(8)
 
 
         search = Search.SearchJP()
