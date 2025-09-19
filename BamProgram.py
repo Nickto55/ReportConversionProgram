@@ -148,6 +148,7 @@ class BamMain:
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
             i:list
+            res.reverse()
             for i in res:
                 if "№" in i:
                     i.remove("№")

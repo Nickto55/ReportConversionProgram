@@ -3,9 +3,12 @@ from datetime import date, timedelta
 import pandas as pd
 import plyer
 
+
 import ExcelPrint
 import JsonWork
 import Search
+
+import Body
 
 
 def get_dates(len_date: int):
@@ -34,8 +37,11 @@ def send_notification(title, message, settime=15, file_path=""):
 
 
 class JpMain:
-    def __init__(self):
+    def __init__(self, count_prog = None, root = None):
         self.config = JsonWork.JsonConfig()
+        self.root = root
+
+
 
         search = Search.SearchJP()
         self.data = search.get_dict_all_data()
@@ -212,9 +218,6 @@ class JpMain:
         result1 = self.first_t()
         result2 = self.second_t()
 
-        count_column1 = len(result1[0])
-        count_column2 = len(result2[0])
-        sum_count_column = len(result1[0]) + len(result2[0]) + 2
 
         """
         2 версия
