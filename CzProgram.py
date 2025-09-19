@@ -55,9 +55,11 @@ def get_dates(len_date: int, len_date_value: int = 3, year: bool = False):
 
 class CzMain:
 
-    def __init__(self, parent, accepted_chuse_user: bool = False):
+    def __init__(self, parent, accepted_chuse_user: bool = False, dop_date: int = None):
         self.parent = parent
         self.config = JsonWork.JsonConfig()
+
+        self.dop_date = dop_date
 
         self.search = Search.SearchCz()
         self.data = self.search.get_dict_all_data()
@@ -232,6 +234,7 @@ class CzMain:
         def foc(date_search: int = None):
             count_foc = 0
             dce_list = []
+            result_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -269,6 +272,7 @@ class CzMain:
                                                 continue
                                             dce_list.append(n_dse)
                                             count_foc += 1
+
                                     else:
                                         dceLast = ""
                                         for dce in dce_list:
@@ -279,13 +283,14 @@ class CzMain:
                                             continue
                                         dce_list.append(n_dse)
                                         count_foc += 1
+                                        result_list.append(list(data.values()))
 
                                     break
                                 break
 
-            for dce in dce_list:
-                if dce_list.count(dce) > 1:
-                    print(dce_list.count(dce), dce)
+            if pd.isna(date_search) and not pd.isna(self.dop_date):
+                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr.write_to_sheet(result_list, "FOC_Cz")
 
             return count_foc
 
@@ -298,6 +303,7 @@ class CzMain:
         def toc(date_search: int = None):
             count_foc = 0
             dce_list = []
+            result_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -335,6 +341,7 @@ class CzMain:
                                                 continue
                                             dce_list.append(n_dse)
                                             count_foc += 1
+
                                     else:
                                         dceLast = ""
                                         for dce in dce_list:
@@ -345,9 +352,13 @@ class CzMain:
                                             continue
                                         dce_list.append(n_dse)
                                         count_foc += 1
+                                        result_list.append(list(data.values()))
 
                                     break
                                 break
+            if pd.isna(date_search) and not pd.isna(self.dop_date):
+                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr.write_to_sheet(result_list, "TOC_Cz")
 
             return count_foc
 
@@ -361,6 +372,7 @@ class CzMain:
         def poc(date_search: int = None):
             count_foc = 0
             dce_list = []
+            result_list = []
             for i in self.data:
                 data = self.data.get(i, "")
                 n_done = data.get(self.config.getCzColumnName("Table of contents: Done"), "")
@@ -398,6 +410,7 @@ class CzMain:
                                                 continue
                                             dce_list.append(n_dse)
                                             count_foc += 1
+
                                     else:
                                         dceLast = ""
                                         for dce in dce_list:
@@ -408,10 +421,12 @@ class CzMain:
                                             continue
                                         dce_list.append(n_dse)
                                         count_foc += 1
-
+                                        result_list.append(list(data.values()))
                                     break
                                 break
-
+            if pd.isna(date_search) and not pd.isna(self.dop_date):
+                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr.write_to_sheet(result_list, "POC_Cz")
             return count_foc
 
         result_row = ["ПОЦ", poc(), ""]

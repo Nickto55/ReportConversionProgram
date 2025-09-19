@@ -66,85 +66,84 @@ class ExcelWriter:
                 else:
                     # Если данные в формате списка списков
                     print("self.min_prog: ", self.min_prog)
-                    if self.min_prog is None:
+                    if self.min_prog == "BAM":
+                        row_pack_h = 1
+                        row_pack_d = 1
+                        for r_idx, row in enumerate(data, start=start_row):
+                            for c_idx, value in enumerate(row, start=start_col):
+                                cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                if c_idx == 1 and value != "" and value != "/../":
+                                    row_pack_h = r_idx
+                                if c_idx == 1 and value == "/../":
+                                    row_pack_d = r_idx
+                                    cell = sheet.cell(row=r_idx, column=c_idx, value="")
+                                if c_idx == 1:
+                                    cell.fill = self.fill_color3
+                                    cell.font = Font(color="f2ecde")
+                                if r_idx == row_pack_h:
+                                    cell.fill = self.fill_color1
+                                    cell.font = Font(color="f2ecde")
+                                elif r_idx == row_pack_d:
+                                    cell.fill = self.fill_color2
+                                    cell.font = Font(color="000000")
+                        auto_fit_columns(sheet)
+                        sheet.column_dimensions['A'].width = 8
+                        sheet.column_dimensions['B'].width = 26
+                        sheet.column_dimensions['D'].width = 32
+                        sheet.column_dimensions['E'].width = 35
+                    elif self.min_prog == "Jp":
+                        for r_idx, row in enumerate(data, start=start_row):
+                            for c_idx, value in enumerate(row, start=start_col):
+                                cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                if c_idx == 2 and value != "":
+                                    cell.fill = self.fill_color3
+                                    cell.font = Font(color="000000")
+                                if (r_idx == 1 or r_idx == 5 or r_idx == 5 + 3 + int(self.config.getJPColumnName(
+                                        "Table of contents: List_date"))) and value != "":
+                                    cell.fill = self.fill_color1
+                                    cell.font = Font(color="f2ecde")
+                        auto_fit_columns(sheet)
+                    elif self.min_prog == "Cz":
+                        for r_idx, row in enumerate(data, start=start_row):
+                            for c_idx, value in enumerate(row, start=start_col):
+                                cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                if r_idx == 3 and value != "":
+                                    cell.fill = self.fill_color3
+                                    cell.font = Font(color="000000")
+                                if r_idx == 1 or c_idx == 1:
+                                    cell.fill = self.fill_color1
+                                    cell.font = Font(color="f2ecde")
+                        auto_fit_columns(sheet)
+                    elif self.min_prog == "Ge":
+                        for r_idx, row in enumerate(data, start=start_row):
+                            for c_idx, value in enumerate(row, start=start_col):
+                                cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                if r_idx in [9, 14, 19, 24, 29]:
+                                    cell.fill = self.fill_color1
+                                    cell.font = Font(color="f2ecde")
+                                if r_idx in [6, 0] and value != "":
+                                    cell.fill = self.fill_color1
+                                    cell.font = Font(color="f2ecde")
+                                if (c_idx in [3, 0] and value != "") or(r_idx == 5 and c_idx > 8):
+                                    cell.fill = self.fill_color3
+                                    cell.font = Font(color="000000")
+                                if r_idx == 5 and 5 < c_idx < 9:
+                                    cell.fill = self.fill_color4
+                                    cell.font = Font(color="000000")
+
+                                if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}")
+                                if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}+{self.alfavit[c_idx-10]}{r_idx}")
+                        auto_fit_columns(sheet)
+                        for i in self.alfavit:
+                            sheet.column_dimensions[f'{i}'].width = 3.7
+                        sheet.column_dimensions[f'f'].width = 3.7
+                        sheet.column_dimensions[f'g'].width = 3.7
+                        sheet.column_dimensions[f'h'].width = 3.7 + 7.0
+                        sheet.column_dimensions[f'i'].width = 3.7 + 7.0
+                    else:
                         for r_idx, row in enumerate(data, start=start_row):
                             for c_idx, value in enumerate(row, start=start_col):
                                 sheet.cell(row=r_idx, column=c_idx, value=value)
-                    else:
-                        if self.min_prog == "BAM":
-                            row_pack_h = 1
-                            row_pack_d = 1
-                            for r_idx, row in enumerate(data, start=start_row):
-                                for c_idx, value in enumerate(row, start=start_col):
-                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if c_idx == 1 and value != "" and value != "/../":
-                                        row_pack_h = r_idx
-                                    if c_idx == 1 and value == "/../":
-                                        row_pack_d = r_idx
-                                        cell = sheet.cell(row=r_idx, column=c_idx, value="")
-                                    if c_idx == 1:
-                                        cell.fill = self.fill_color3
-                                        cell.font = Font(color="f2ecde")
-                                    if r_idx == row_pack_h:
-                                        cell.fill = self.fill_color1
-                                        cell.font = Font(color="f2ecde")
-                                    elif r_idx == row_pack_d:
-                                        cell.fill = self.fill_color2
-                                        cell.font = Font(color="000000")
-                            auto_fit_columns(sheet)
-                            sheet.column_dimensions['A'].width = 8
-                            sheet.column_dimensions['B'].width = 26
-                            sheet.column_dimensions['D'].width = 32
-                            sheet.column_dimensions['E'].width = 35
-                        elif self.min_prog == "Jp":
-                            for r_idx, row in enumerate(data, start=start_row):
-                                for c_idx, value in enumerate(row, start=start_col):
-                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if c_idx == 2 and value != "":
-                                        cell.fill = self.fill_color3
-                                        cell.font = Font(color="000000")
-                                    if (r_idx == 1 or r_idx == 5 or r_idx == 5 + 3 + int(self.config.getJPColumnName(
-                                            "Table of contents: List_date"))) and value != "":
-                                        cell.fill = self.fill_color1
-                                        cell.font = Font(color="f2ecde")
-                            auto_fit_columns(sheet)
-                        elif self.min_prog == "Cz":
-                            for r_idx, row in enumerate(data, start=start_row):
-                                for c_idx, value in enumerate(row, start=start_col):
-                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if r_idx == 3 and value != "":
-                                        cell.fill = self.fill_color3
-                                        cell.font = Font(color="000000")
-                                    if r_idx == 1 or c_idx == 1:
-                                        cell.fill = self.fill_color1
-                                        cell.font = Font(color="f2ecde")
-                            auto_fit_columns(sheet)
-                        elif self.min_prog == "Ge":
-                            for r_idx, row in enumerate(data, start=start_row):
-                                for c_idx, value in enumerate(row, start=start_col):
-                                    cell = sheet.cell(row=r_idx, column=c_idx, value=value)
-                                    if r_idx in [9, 14, 19, 24, 29]:
-                                        cell.fill = self.fill_color1
-                                        cell.font = Font(color="f2ecde")
-                                    if r_idx in [6, 0] and value != "":
-                                        cell.fill = self.fill_color1
-                                        cell.font = Font(color="f2ecde")
-                                    if (c_idx in [3, 0] and value != "") or(r_idx == 5 and c_idx > 8):
-                                        cell.fill = self.fill_color3
-                                        cell.font = Font(color="000000")
-                                    if r_idx == 5 and 5 < c_idx < 9:
-                                        cell.fill = self.fill_color4
-                                        cell.font = Font(color="000000")
-
-                                    if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}")
-                                    if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}+{self.alfavit[c_idx-10]}{r_idx}")
-                            auto_fit_columns(sheet)
-                            for i in self.alfavit:
-                                sheet.column_dimensions[f'{i}'].width = 3.7
-                            sheet.column_dimensions[f'f'].width = 3.7
-                            sheet.column_dimensions[f'g'].width = 3.7
-                            sheet.column_dimensions[f'h'].width = 3.7 + 7.0
-                            sheet.column_dimensions[f'i'].width = 3.7 + 7.0
 
                 book.save(self.file_path)
 

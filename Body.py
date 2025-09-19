@@ -1,11 +1,18 @@
 # import webbrowser
 import os
+import subprocess
+import sys
+import time
 import tkinter as tk
+import webbrowser
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH, filedialog
 from tkinter.ttk import Progressbar
 
 import plyer
+import ctypes
+from ctypes import wintypes
+import asyncio
 
 import Config
 import ExcelPrint
@@ -15,7 +22,9 @@ from datetime import datetime as dt
 from BamProgram import BamMain
 from CzProgram import CzMain
 from GeneralizationProg import GeneProg
-from JpProgram import JpMain
+import JpProgram
+import argparse
+
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -30,6 +39,12 @@ def updateInfoConfig(fileOrDir: int):
     else:
         file_path = filedialog.askdirectory(title="Выберите папку")
     return file_path
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 class Main_gui:
@@ -38,7 +53,10 @@ class Main_gui:
         Создаёт главное окно приложения
         :param root: окно
         """
+
         self.config = JsonWork.JsonConfig()
+
+
 
         """
         
@@ -77,11 +95,12 @@ class Main_gui:
         Переменные
         
         """
-        self.brogressbar_value_var = IntVar(value=0)
+        self.brogressbar_value_var =  IntVar(value=0)
 
         self.modification = IntVar(value=1)
         self.ubroutine_Jp_var = BooleanVar(value=True)
         self.ubroutine_Cz_var = BooleanVar(value=True)
+        self.dop_date_Cz_var = BooleanVar(value=False)
         self.ubroutine_Bam_var = BooleanVar(value=True)
         self.availability_of_required_data = True
         self.parent_label_column_jp_bool = False
@@ -90,32 +109,60 @@ class Main_gui:
 
         """
         
+        
+        
+        
         Вызовы функций
         
         """
+        try:
+            icon_path = resource_path("iconca.ico")
+            self.root.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"Не удалось установить иконку: {e}")
         self.checking_data_inputs()
 
         self.create_gui()
 
     def start_button_command(self):
+        self.brogressbar_value_var.set(0)
+        self.progressbar.update()
         if self.ubroutine_Jp_var.get():
-            jp_prog = JpMain()
+            jp_prog = JpProgram.JpMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                     int(self.ubroutine_Bam_var.get())))
+
+
 
         if self.ubroutine_Cz_var.get():
-            cz_prog = CzMain(self.root)
+            if self.dop_date_Cz_var.get():
+                cz_prog = CzMain(self.root, dop_date=1)
+            else:
+                cz_prog = CzMain(self.root)
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
             excelPr.write_to_sheet(cz_prog.main(), "СЗ")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())))
+
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
+            self.change_value_progress_bar_var(
+                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                        int(self.ubroutine_Bam_var.get())))
 
-        ge_prog = GeneProg()
-        excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
-        excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+        self.change_value_progress_bar_var(100-self.brogressbar_value_var.get())
+
+        if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
+            ge_prog = GeneProg()
+            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
+            excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
 
@@ -140,6 +187,11 @@ class Main_gui:
             parent = tk.Toplevel(self.root)
             parent.title("Необходимо ввести данные")
             parent.geometry("600x180")
+            try:
+                icon_path = resource_path("dirBook.ico")
+                parent.iconbitmap(icon_path)
+            except Exception as e:
+                print(f"Не удалось установить иконку: {e}")
 
             main_faim = LabelFrame(parent, text="Введите:", height=100)
             main_faim.pack(ipadx=5, ipady=5, fill=BOTH)
@@ -771,6 +823,13 @@ class Main_gui:
         button_rc = Button(setings_notebook, text="Настроить", command=label_rc_command)
         button_rc.place(x=125, y=100)
 
+        label_dop_date = Label(setings_notebook, text="Дополнительные листы: ")
+        label_dop_date.place(x=0, y=126)
+
+        check_button_dop_date = Checkbutton(setings_notebook, variable=self.dop_date_Cz_var)
+        check_button_dop_date.place(x=150, y=126)
+
+
         button_save = Button(setings_notebook, text="Сохранить", command=button_save_command)
         button_save.place(x=552, y=156)
 
@@ -780,6 +839,38 @@ class Main_gui:
         """
         Рисует главное окно
         """
+
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--console", action="store_true", help="Запустить с консолью")
+        parser.add_argument("--cfile", action="store_true", help="Запустить с консолью")
+
+
+        args = parser.parse_args()
+
+        if args.cfile:
+
+            CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".ReportConversionProgram")
+            webbrowser.open(CONFIG_DIR)
+            self.root.destroy()
+            self.root.quit()
+            return None
+        if args.console:
+            kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+            hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+
+
+
+            if hStdOut == -1 or hStdOut == 0:
+                # Если нет — создаём новую консоль
+                kernel32.AllocConsole()
+
+                # Перенаправляем stdout/stderr в новую консоль
+                sys.stdout = open('CONOUT$', 'w')
+                sys.stderr = open('CONOUT$', 'w')
+
+
+
         main_frame = Frame(self.root)
         main_frame.place(x=0, y=0, height=self.distance_y_root, width=self.distance_x_root)
 
@@ -803,11 +894,12 @@ class Main_gui:
 
         try:
             modification_time = os.path.getmtime(f"{os.getcwd()}/ReportConversionProgram.xlsx")
-            last_date_start = str(dt.fromtimestamp(modification_time))[:10]
+            last_date_start = str(dt.fromtimestamp(modification_time))
         except:
             last_date_start = "-"
 
-        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start}")
+        """jshfhdsjkfds """
+        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
         label_time_last_start_program.place(x=0,y=15)
 
         """Созаем чеки"""
@@ -859,14 +951,16 @@ class Main_gui:
         down_frame.place(x=0, y=self.distance_y_root * 2 / 3, height=self.distance_y_root * 1 / 3,
                          width=self.distance_x_root)
 
-        progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
-        progressbar.place(x=5,y=0, width=785)
+        self.progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
+        self.progressbar.place(x=5,y=0, width=785)
 
         button_start = Button(down_frame, text="Начать", command=self.start_button_command)
         button_start.place(x=self.distance_x_root - 55, y=self.distance_y_root * 1 / 3 - 45, width=50)
 
     def change_value_progress_bar_var(self, value_pb):
-        self.brogressbar_value_var.set(value_pb)
+        self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb)
+        self.progressbar.update()
+
 
     def gui_debug_mode(self):
         parent = tk.Toplevel(self.root)

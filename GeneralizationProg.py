@@ -191,6 +191,8 @@ class GeneProg:
             """ФОЦ"""
             dateList_cat = []
             for dateList in foc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
                 if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(dateList[-1][5:7]) == now_month:
                     result_row.append(dateList[0])
@@ -211,6 +213,8 @@ class GeneProg:
             """ФОЦ"""
             dateList_cat = []
             for dateList in foc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
                 if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(dateList[-1][5:7]) == now_month:
                     result_row.append(dateList[1])
@@ -235,6 +239,8 @@ class GeneProg:
             """ТОЦ"""
             dateList_cat = []
             for dateList in toc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
 
                 if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(dateList[-1][5:7]) == now_month:
@@ -254,6 +260,8 @@ class GeneProg:
             """ТОЦ"""
             dateList_cat = []
             for dateList in toc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
                 if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(dateList[-1][5:7]) == now_month:
                     result_row.append(dateList[1])
@@ -278,6 +286,8 @@ class GeneProg:
             """ПОЦ"""
             dateList_cat = []
             for dateList in poc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
                 if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(dateList[-1][5:7]) == now_month:
                     result_row.append(dateList[0])
@@ -296,6 +306,8 @@ class GeneProg:
             """ПОЦ"""
             dateList_cat = []
             for dateList in poc_date_list:
+                if len(dateList_cat) != 3:
+                    continue
                 dateList_cat.append(int(dateList[-1][8:10]))
                 if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(dateList[-1][5:7]) == now_month:
                     result_row.append(dateList[1])
