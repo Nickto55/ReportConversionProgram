@@ -89,6 +89,7 @@ class BamMain:
             for i in row.keys():
                 result_row.append(i)
             break
+        result_row.append("/::/")
         result.append(result_row)
         try:
             i_sort_last = self.headers[-1]
@@ -135,6 +136,7 @@ class BamMain:
             i_sort_last = i_sort
             result[row_for_count].insert(3,  count_dse-count_dse2)
             result[row_for_count].insert(6,  count_up-count_up2)
+            result[row_for_count].append(result[row_for_count+1][7])
             count_dse2 = count_dse
 
             count_up2 = count_up
@@ -147,8 +149,11 @@ class BamMain:
 
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
+            res_0 = res[0]
+            res.pop(0)
             i:list
             res.reverse()
+            res.insert(0,res_0)
             for i in res:
                 if "№" in i:
                     i.remove("№")

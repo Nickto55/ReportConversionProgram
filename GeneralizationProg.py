@@ -146,6 +146,7 @@ class GeneProg:
 
         for key_row in self.data_bam.values():
             for key_col in key_row.items():
+
                 if "ТОЦ" in key_col:
                     foc_search = "ТОЦ"
                 elif "ПОЦ" in key_col:
@@ -153,57 +154,40 @@ class GeneProg:
                 break
             if foc_search == "ТОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    toc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", "")])
+                    toc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
-                elif not pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    if len(toc_date_list) > 0:
-                        if len(toc_date_list[-1]) == 3:
-                            continue
-                        elif len(toc_date_list[-1]) < 3:
-                            toc_date_list[-1].append(key_row.get("Дата", ""))
 
             if foc_search == "ПОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    poc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", "")])
+                    poc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
-                elif not pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    if len(poc_date_list) > 0:
-                        if len(poc_date_list[-1]) == 3:
-                            continue
-                        elif len(poc_date_list[-1]) < 3:
-                            poc_date_list[-1].append(key_row.get("Дата", ""))
+
+
 
             if foc_search == "ФОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    foc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", "")])
+                    foc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
-                elif not pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    if len(foc_date_list) > 0:
-                        if len(foc_date_list[-1]) == 3:
-                            continue
-                        elif len(foc_date_list[-1]) < 3:
-                            foc_date_list[-1].append(key_row.get("Дата", ""))
 
         for column in range(33):
             """ФОЦ"""
             dateList_cat = []
             for dateList in foc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[0])
-                    # result_row.append(f"{column}, {dateList[0]}")
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
+                    if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[0])
 
-                    break
-                if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[0])
-                    # result_row.append(f"{column}nc{dateList[0]}")
-                    break
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[0])
+                        break
+                except:
+                    pass
             if not int(result[-9][column + 5]) in dateList_cat:
                 result_row.append("")
 
@@ -213,17 +197,17 @@ class GeneProg:
             """ФОЦ"""
             dateList_cat = []
             for dateList in foc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[1])
-
-                    break
-                if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[1])
-                    break
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
+                    if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[1])
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[1])
+                        break
+                except:
+                    pass
             if not int(result[-10][column + 5]) in dateList_cat:
                 result_row.append("")
 
@@ -239,18 +223,18 @@ class GeneProg:
             """ТОЦ"""
             dateList_cat = []
             for dateList in toc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
 
-                if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[0])
-
-                    break
-                if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[0])
-                    break
+                    if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[0])
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[0])
+                        break
+                except:
+                    pass
             if not int(result[-14][column + 5]) in dateList_cat:
                 result_row.append("")
 
@@ -260,17 +244,18 @@ class GeneProg:
             """ТОЦ"""
             dateList_cat = []
             for dateList in toc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[1])
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
+                    if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[1])
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[1])
+                        break
 
-                    break
-                if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[1])
-                    break
+                except:
+                    pass
             if not int(result[-15][column + 5]) in dateList_cat:
                 result_row.append("")
 
@@ -286,17 +271,18 @@ class GeneProg:
             """ПОЦ"""
             dateList_cat = []
             for dateList in poc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[0])
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
+                    if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[0])
 
-                    break
-                if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[0])
-                    break
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[0])
+                        break
+                except:
+                    pass
             if not int(result[-19][column + 5]) in dateList_cat:
                 result_row.append("")
 
@@ -306,17 +292,18 @@ class GeneProg:
             """ПОЦ"""
             dateList_cat = []
             for dateList in poc_date_list:
-                if len(dateList_cat) != 3:
-                    continue
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                    result_row.append(dateList[1])
+                try:
+                    dateList_cat.append(int(dateList[-1][8:10]))
+                    if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(dateList[-1][5:7]) == now_month:
+                        result_row.append(dateList[1])
 
-                    break
-                if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(
-                        dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                    result_row.append(dateList[1])
-                    break
+                        break
+                    if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(
+                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(dateList[1])
+                        break
+                except:
+                    pass
             if not int(result[-20][column + 5]) in dateList_cat:
                 result_row.append("")
         result.append(result_row)
@@ -363,10 +350,13 @@ class GeneProg:
             if int(str(date_cz)[8:10]) == int(result[-24][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(int(egogo))
                 break
-            if int(str(date_cz)[8:10]) == int(result[-24][column + 5 - 29]) and int(
-                    str(date_cz)[5:7]) == last_month and len(result_row) < 10:
-                result_row.append(int(egogo))
-                break
+            try:
+                if int(str(date_cz)[8:10]) == int(result[-24][column + 5 - 29]) and int(
+                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                    result_row.append(int(egogo))
+                    break
+            except Exception as e:
+                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 373, {e}")
             if not int(result[-24][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
@@ -376,36 +366,45 @@ class GeneProg:
             if int(str(date_cz)[8:10]) == int(result[-25][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(foc)
                 break
-            if int(str(date_cz)[8:10]) == int(result[-25][column + 5 - 29]) and int(
-                    str(date_cz)[5:7]) == last_month and len(result_row) < 10:
-                result_row.append(foc)
-                break
+            try:
+                if result[-25][column + 5 - 29] != "":
+                    if int(str(date_cz)[8:10]) == int(result[-25][column + 5 - 29]) and int(
+                            str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                        result_row.append(foc)
+                        break
+            except Exception as e:
+                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 389, {e}")
             if not int(result[-25][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ТОЦ", "", ""]
-        for column in range(33):
+        for column in range(36):
             if int(str(date_cz)[8:10]) == int(result[-26][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(toc)
                 break
-            if int(str(date_cz)[8:10]) == int(result[-26][column + 5 - 29]) and int(
-                    str(date_cz)[5:7]) == last_month and len(result_row) < 10:
-                result_row.append(toc)
-                break
-            if not int(result[-26][column + 5]) == int(str(date_cz)[8:10]):
-                result_row.append("")
+            try:
+                if int(str(date_cz)[8:10]) == int(result[-26][column + 5 - 29]) and int(
+                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                    result_row.append(toc)
+                    break
+            except Exception as e:
+                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 407, {e}")
+            result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ПОЦ", "", ""]
-        for column in range(33):
+        for column in range(36):
             if int(str(date_cz)[8:10]) == int(result[-27][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(poc)
                 break
-            if int(str(date_cz)[8:10]) == int(result[-27][column + 5 - 29]) and int(
-                    str(date_cz)[5:7]) == last_month and len(result_row) < 10:
-                result_row.append(poc)
-                break
+            try:
+                if int(str(date_cz)[8:10]) == int(result[-27][column + 5 - 29]) and int(
+                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                    result_row.append(poc)
+                    break
+            except Exception as e:
+                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 420, {e}")
             if not int(result[-27][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
@@ -413,22 +412,18 @@ class GeneProg:
 
         for i in range(2): result.append(result_row1.copy())
         result.append(["" for i in range(59)])
-        result[-1].append("V2.01.not_color")
+        result[-1].append("V2.01.color")
 
         if not self.data_ge is None:
             for r_idx, row in enumerate(self.data_ge):
                 for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
                     if len(result) > r_idx:
                         if len(result[r_idx]) > c_idx:
-                            if c_idx < 3 or r_idx<3:
+                            if c_idx < 3 or r_idx < 3:
                                 continue
-                            if result[r_idx][c_idx] == "" and not pd.isna(self.data_ge[r_idx-1].get(f"Unnamed: {c_idx}", "")):
-                                result[r_idx][c_idx] = self.data_ge[r_idx-1].get(f"Unnamed: {c_idx}", "")
-
-
-
-
-            # по оси у -2 по оси х -1
+                            if result[r_idx][c_idx] == "" and not pd.isna(
+                                    self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")):
+                                result[r_idx][c_idx] = self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")
 
         return result
 
@@ -436,6 +431,9 @@ class GeneProg:
 if __name__ == "__main__":
     run = GeneProg()
     config = JsonConfig()
+
+    # for i in run.main():
+    #     print(i)
     excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
 
     excelPr.write_to_sheet(run.main(), "Общая информация")

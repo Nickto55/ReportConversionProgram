@@ -116,6 +116,9 @@ class JpMain:
                         date_stats[truncated_date]["count_removed"] += 1
                         if data.get(pos_conversion, "") == "+":
                             date_stats[truncated_date]["count_conversion"] += 1
+
+
+
         for i in self.data:
             data = self.data.get(i, "")
             date_dse_value = data.get(pos_dse, "")
@@ -123,6 +126,13 @@ class JpMain:
             if not pd.isna(date_dse_value):
                 truncated_date = str(date_add)[:len(date_list[0])]
                 if truncated_date in date_list:
+                    if not truncated_date in date_stats.keys():
+                        date_stats[truncated_date] = {
+                            "count_removed": 0,
+                            "count_conversion": 0,
+                            "count_date_add": 0,
+                            "count": 0
+                        }
                     date_stats[truncated_date]["count_date_add"] += 1
 
 

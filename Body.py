@@ -54,6 +54,8 @@ class Main_gui:
         :param root: окно
         """
 
+        self.start_button_var = False
+        self.progresslabel_var = StringVar(value="...")
         self.config = JsonWork.JsonConfig()
 
 
@@ -127,6 +129,7 @@ class Main_gui:
     def start_button_command(self):
         self.brogressbar_value_var.set(0)
         self.progressbar.update()
+        self.progresslabel_var.set("Работает...")
         if self.ubroutine_Jp_var.get():
             jp_prog = JpProgram.JpMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
@@ -164,6 +167,8 @@ class Main_gui:
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
+        self.progresslabel_var.set("Программа завершена!")
+        self.progresslabel.update()
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
 
     def recovery_data_inputs(self, dic_recovery: dict):
@@ -844,6 +849,7 @@ class Main_gui:
         parser = argparse.ArgumentParser()
         parser.add_argument("--console", action="store_true", help="Запустить с консолью")
         parser.add_argument("--cfile", action="store_true", help="Запустить с консолью")
+        parser.add_argument("--pstart", action="store_true", help="Запустить с консолью")
 
 
         args = parser.parse_args()
@@ -855,6 +861,8 @@ class Main_gui:
             self.root.destroy()
             self.root.quit()
             return None
+        if args.pstart:
+            self.start_button_var = True
         if args.console:
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
@@ -898,7 +906,7 @@ class Main_gui:
         except:
             last_date_start = "-"
 
-        """jshfhdsjkfds """
+        """Таймеры"""
         label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
         label_time_last_start_program.place(x=0,y=15)
 
@@ -954,8 +962,14 @@ class Main_gui:
         self.progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
         self.progressbar.place(x=5,y=0, width=785)
 
+        self.progresslabel = Label(down_frame, textvariable=self.progresslabel_var)
+        self.progresslabel.place(x=0, y=25)
+
         button_start = Button(down_frame, text="Начать", command=self.start_button_command)
-        button_start.place(x=self.distance_x_root - 55, y=self.distance_y_root * 1 / 3 - 45, width=50)
+        button_start.place(x=self.distance_x_root - 55, y=25, width=50)
+
+        if self.start_button_var:
+            self.start_button_command()
 
     def change_value_progress_bar_var(self, value_pb):
         self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb)

@@ -83,9 +83,13 @@ class ExcelWriter:
                                 if r_idx == row_pack_h:
                                     cell.fill = self.fill_color1
                                     cell.font = Font(color="f2ecde")
+                                    if c_idx == 12:
+                                        cell.font = Font(color="6f747c")
                                 elif r_idx == row_pack_d:
                                     cell.fill = self.fill_color2
                                     cell.font = Font(color="000000")
+                                    if c_idx == 12:
+                                        cell.font = Font(color="aaadb2")
                         auto_fit_columns(sheet)
                         sheet.column_dimensions['A'].width = 8
                         sheet.column_dimensions['B'].width = 26
