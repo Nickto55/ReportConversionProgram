@@ -81,13 +81,17 @@ class GeneProg:
         result[-1][0] = "ЖП"
 
         result_row = ["", "", "Всего ЖП"]
+        cdsount = 0
 
         for i in range(3, 38):
             if result[-4][i] == int(str(dt.now())[8:10]):
                 for r_idx, row in enumerate(self.data_jp, 1):
                     for value in self.data_jp[row]:
                         if r_idx == 2:
-                            result_row.append(self.data_jp[0].get("Задач", ""))
+                            if int(str(dt.now())[5:7])  == now_month and cdsount==1:
+                                print("hjodsjhdhklllllllsfjlksdhldshl")
+                                result_row.append(self.data_jp[0].get("Задач", ""))
+                            else: cdsount=1
                             break
 
 
@@ -346,65 +350,57 @@ class GeneProg:
                 poc = (key_row.get(date_cz, ""))
 
         result_row = ["", "", "Итого", "", ""]
+
+        countjsa = 0
         for column in range(33):
             if int(str(date_cz)[8:10]) == int(result[-24][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(int(egogo))
-                break
-            try:
-                if int(str(date_cz)[8:10]) == int(result[-24][column + 5 - 29]) and int(
-                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                if countjsa == 1:
                     result_row.append(int(egogo))
-                    break
-            except Exception as e:
-                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 373, {e}")
+                else:
+                    countjsa = 1
+                    continue
+                break
             if not int(result[-24][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ФОЦ", "", ""]
+        countjsa = 0
         for column in range(33):
             if int(str(date_cz)[8:10]) == int(result[-25][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(foc)
+                if countjsa == 1:
+                    result_row.append(foc)
+                else:
+                    countjsa = 1
+                    continue
                 break
-            try:
-                if result[-25][column + 5 - 29] != "":
-                    if int(str(date_cz)[8:10]) == int(result[-25][column + 5 - 29]) and int(
-                            str(date_cz)[5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(foc)
-                        break
-            except Exception as e:
-                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 389, {e}")
             if not int(result[-25][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
+        countjsa = 0
         result.append(result_row)
         result_row = ["", "", "ТОЦ", "", ""]
         for column in range(36):
             if int(str(date_cz)[8:10]) == int(result[-26][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(toc)
-                break
-            try:
-                if int(str(date_cz)[8:10]) == int(result[-26][column + 5 - 29]) and int(
-                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                if countjsa == 1:
                     result_row.append(toc)
-                    break
-            except Exception as e:
-                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 407, {e}")
+                else:
+                    countjsa = 1
+                    continue
+                break
             result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ПОЦ", "", ""]
+        countjsa = 0
         for column in range(36):
             if int(str(date_cz)[8:10]) == int(result[-27][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(poc)
-                break
-            try:
-                if int(str(date_cz)[8:10]) == int(result[-27][column + 5 - 29]) and int(
-                        str(date_cz)[5:7]) == last_month and len(result_row) < 10:
+                if countjsa == 1:
                     result_row.append(poc)
-                    break
-            except Exception as e:
-                print(f"~~Пропуск столбца: {column + 5 - 25}, стр 420, {e}")
+                else:
+                    countjsa = 1
+                    continue
+                break
             if not int(result[-27][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
