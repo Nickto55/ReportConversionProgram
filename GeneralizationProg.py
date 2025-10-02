@@ -38,21 +38,27 @@ class GeneProg:
             result_row2.append(r"\.../")
         for i in range(4): result.append(result_row1.copy())
         date_str = str(dt.now())[:10]
-        date_str_last = str(dt.now())[:10]
-        month_number = int(date_str_last[5:7]) - 1
+        current_year = int(date_str[:4])
+        current_month = int(date_str[5:7])
+        
+        # Calculate previous month and year
+        if current_month == 1:
+            last_month_num = 12
+            last_year = current_year - 1
+        else:
+            last_month_num = current_month - 1
+            last_year = current_year
 
-        date_str_last = dt(2023, month_number, 1)
+        date_str_last = dt(last_year, last_month_num, 1)
 
         result[0][0] = date_str
         date_object = dt.strptime(date_str, '%Y-%m-%d')
         titel_mounth_last = (date_str_last.strftime('%B'))
         titel_mounth_now = date_object.strftime('%B')
-        count_day_now_mounth = list(calendar.monthrange(int(date_str[:4]), int(date_str[5:7])))[-1]
-        last_month = int(date_str[5:7]) - 1
-        now_month = int(date_str[5:7])
-        if last_month == 0:
-            last_month = 12
-        count_day_last_mounth = list(calendar.monthrange(int(date_str[:4]), last_month))[-1]
+        count_day_now_mounth = list(calendar.monthrange(current_year, current_month))[-1]
+        last_month = last_month_num
+        now_month = current_month
+        count_day_last_mounth = list(calendar.monthrange(last_year, last_month))[-1]
 
         result_row = []
 
