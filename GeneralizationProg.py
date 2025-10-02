@@ -24,13 +24,11 @@ class GeneProg:
     def get_datas_excel(self, start_row=1, start_col=1):
         self.data_jp, self.data_cz, self.data_bam, self.data_ge = self.search_in_sheet.sheet_name_list()
 
-        # for r_idx, row in enumerate(self.data_jp.values, start=start_row):
-        #     for c_idx, value in enumerate(row, start=start_col):
-        #         print(value, end=" ")
-        #     print()
 
     def main(self):
         result = []
+
+        """Создание календаря, для таблицы"""
         result_row1 = ["" for i in range(38)]
         result_row2 = ["" for i in range(8)]
         result_row2.append(r"\..../")
@@ -40,8 +38,7 @@ class GeneProg:
         date_str = str(dt.now())[:10]
         current_year = int(date_str[:4])
         current_month = int(date_str[5:7])
-        
-        # Calculate previous month and year
+
         if current_month == 1:
             last_month_num = 12
             last_year = current_year - 1
@@ -95,10 +92,10 @@ class GeneProg:
                     for value in self.data_jp[row]:
                         if r_idx == 2:
                             if int(str(dt.now())[5:7])  == now_month and cdsount==1:
-                                print("hjodsjhdhklllllllsfjlksdhldshl")
                                 result_row.append(self.data_jp[0].get("Задач", ""))
+                                break
                             else: cdsount=1
-                            break
+
 
 
             else:
@@ -107,7 +104,6 @@ class GeneProg:
         result.append(result_row)
 
         result_row = ["", "", "Выполнено ЖП", "", ""]
-        # print(last_month, now_month)
         for i in range(33):
             result_row.append("")
 
@@ -142,7 +138,9 @@ class GeneProg:
         # print(result_row)
         result.append(result_row)
 
-        for i in range(2): result.append(result_row2.copy())
+        for i in range(2): result.append(result_row1.copy())
+        # for i in range(2): result.append(result_row2.copy())
+
         for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "ФОЦ"
         count_titel = 0
@@ -162,23 +160,22 @@ class GeneProg:
                 elif "ПОЦ" in key_col:
                     foc_search = "ПОЦ"
                 break
+
+            if foc_search == "ФОЦ":
+                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
+                    foc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                elif pd.isna(key_row.get("Дата", "")):
+                    continue
+
             if foc_search == "ТОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    toc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
+                    toc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
             if foc_search == "ПОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    poc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
-                elif pd.isna(key_row.get("Дата", "")):
-                    continue
-
-
-
-            if foc_search == "ФОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Фрезерные ЧПУ", "")):
-                    foc_date_list.append([key_row.get("Фрезерные ЧПУ", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
+                    poc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
@@ -357,55 +354,41 @@ class GeneProg:
 
         result_row = ["", "", "Итого", "", ""]
 
-        countjsa = 0
+
         for column in range(33):
             if int(str(date_cz)[8:10]) == int(result[-24][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                if countjsa == 1:
-                    result_row.append(int(egogo))
-                else:
-                    countjsa = 1
-                    continue
+                result_row.append(int(egogo))
                 break
+
+
             if not int(result[-24][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ФОЦ", "", ""]
-        countjsa = 0
+
         for column in range(33):
             if int(str(date_cz)[8:10]) == int(result[-25][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                if countjsa == 1:
-                    result_row.append(foc)
-                else:
-                    countjsa = 1
-                    continue
+                result_row.append(foc)
                 break
             if not int(result[-25][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
 
-        countjsa = 0
         result.append(result_row)
         result_row = ["", "", "ТОЦ", "", ""]
-        for column in range(36):
+        for column in range(34):
             if int(str(date_cz)[8:10]) == int(result[-26][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                if countjsa == 1:
-                    result_row.append(toc)
-                else:
-                    countjsa = 1
-                    continue
+
+                result_row.append(toc)
                 break
             result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ПОЦ", "", ""]
         countjsa = 0
-        for column in range(36):
+        for column in range(34):
             if int(str(date_cz)[8:10]) == int(result[-27][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                if countjsa == 1:
-                    result_row.append(poc)
-                else:
-                    countjsa = 1
-                    continue
+                result_row.append(poc)
                 break
             if not int(result[-27][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")

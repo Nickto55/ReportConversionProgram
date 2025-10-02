@@ -1,30 +1,23 @@
-# import webbrowser
+import argparse
+import ctypes
 import os
-import subprocess
 import sys
-import time
 import tkinter as tk
 import webbrowser
+from datetime import datetime as dt
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH, filedialog
 from tkinter.ttk import Progressbar
 
 import plyer
-import ctypes
-from ctypes import wintypes
-import asyncio
 
 import Config
 import ExcelPrint
-# import plyer
+import JpProgram
 import JsonWork
-from datetime import datetime as dt
 from BamProgram import BamMain
 from CzProgram import CzMain
 from GeneralizationProg import GeneProg
-import JpProgram
-import argparse
-
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -39,6 +32,8 @@ def updateInfoConfig(fileOrDir: int):
     else:
         file_path = filedialog.askdirectory(title="Выберите папку")
     return file_path
+
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -57,8 +52,6 @@ class Main_gui:
         self.start_button_var = False
         self.progresslabel_var = StringVar(value="...")
         self.config = JsonWork.JsonConfig()
-
-
 
         """
         
@@ -97,7 +90,7 @@ class Main_gui:
         Переменные
         
         """
-        self.brogressbar_value_var =  IntVar(value=0)
+        self.brogressbar_value_var = IntVar(value=0)
 
         self.modification = IntVar(value=1)
         self.ubroutine_Jp_var = BooleanVar(value=True)
@@ -136,9 +129,7 @@ class Main_gui:
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
             self.change_value_progress_bar_var(
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                     int(self.ubroutine_Bam_var.get())))
-
-
+                        int(self.ubroutine_Bam_var.get())))
 
         if self.ubroutine_Cz_var.get():
             if self.dop_date_Cz_var.get():
@@ -151,7 +142,6 @@ class Main_gui:
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
 
-
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
@@ -160,7 +150,7 @@ class Main_gui:
                 100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
                         int(self.ubroutine_Bam_var.get())))
 
-        self.change_value_progress_bar_var(100-self.brogressbar_value_var.get())
+        self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
 
         if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
             ge_prog = GeneProg()
@@ -271,7 +261,7 @@ class Main_gui:
             entry_date.insert(0, self.config.getJPColumnName("Table of contents: List_date"))
 
         def label_column_command():
-            def dismiss(window):
+            def dismiss():
                 self.parent_label_column_jp.grab_release()
                 self.parent_label_column_jp.destroy()
                 self.parent_label_column_jp_bool = False
@@ -288,7 +278,7 @@ class Main_gui:
                 self.config.setJPColumnName("Table of contents: Name", entry_Date_name.get())
                 self.config.setJPColumnName("Table of contents: Translation", entry_Date_translation.get())
 
-                dismiss(self.parent_label_column_jp)
+                dismiss()
 
             def command_reset_button():
                 self.config.setJPColumnName("Table of contents: Date",
@@ -338,10 +328,11 @@ class Main_gui:
                 self.parent_label_column_jp.title("Изменение столбцов")
                 self.parent_label_column_jp.geometry("300x197")
                 self.parent_label_column_jp.protocol("WM_DELETE_WINDOW", lambda: dismiss(
-                    self.parent_label_column_jp))  # перехватываем нажатие на крестик
+                ))  # перехватываем нажатие на крестик
                 self.parent_label_column_jp.wm_attributes("-topmost", True)
 
                 frame = Frame(self.parent_label_column_jp)
+                # noinspection PyTypeChecker
                 frame.pack(fill=BOTH)
 
                 label_Date = Label(frame, text=f'Дата: ')
@@ -834,7 +825,6 @@ class Main_gui:
         check_button_dop_date = Checkbutton(setings_notebook, variable=self.dop_date_Cz_var)
         check_button_dop_date.place(x=150, y=126)
 
-
         button_save = Button(setings_notebook, text="Сохранить", command=button_save_command)
         button_save.place(x=552, y=156)
 
@@ -845,17 +835,14 @@ class Main_gui:
         Рисует главное окно
         """
 
-
         parser = argparse.ArgumentParser()
         parser.add_argument("--console", action="store_true", help="Запустить с консолью")
         parser.add_argument("--cfile", action="store_true", help="Запустить с консолью")
         parser.add_argument("--pstart", action="store_true", help="Запустить с консолью")
 
-
         args = parser.parse_args()
 
         if args.cfile:
-
             CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".ReportConversionProgram")
             webbrowser.open(CONFIG_DIR)
             self.root.destroy()
@@ -867,8 +854,6 @@ class Main_gui:
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
 
-
-
             if hStdOut == -1 or hStdOut == 0:
                 # Если нет — создаём новую консоль
                 kernel32.AllocConsole()
@@ -876,8 +861,6 @@ class Main_gui:
                 # Перенаправляем stdout/stderr в новую консоль
                 sys.stdout = open('CONOUT$', 'w')
                 sys.stderr = open('CONOUT$', 'w')
-
-
 
         main_frame = Frame(self.root)
         main_frame.place(x=0, y=0, height=self.distance_y_root, width=self.distance_x_root)
@@ -892,13 +875,12 @@ class Main_gui:
         left_frame.place(x=0, y=0, height=self.distance_y_root * 2 / 7, width=self.distance_x_root / 5)
 
         left_down_frame = LabelFrame(main_frame, text="Информация:")
-        left_down_frame.place(x=0, y=100, height= self.distance_y_root * 2 / 3 -self.distance_y_root * 2 / 7 - 4, width=self.distance_x_root / 5)
-
+        left_down_frame.place(x=0, y=100, height=self.distance_y_root * 2 / 3 - self.distance_y_root * 2 / 7 - 4,
+                              width=self.distance_x_root / 5)
 
         """Получаем и выводим информацию"""
         label_time_now = Label(left_down_frame, text=f"Cейчас: {str(dt.now())[:10]}")
-        label_time_now.place(x=0,y=0)
-
+        label_time_now.place(x=0, y=0)
 
         try:
             modification_time = os.path.getmtime(f"{os.getcwd()}/ReportConversionProgram.xlsx")
@@ -907,8 +889,9 @@ class Main_gui:
             last_date_start = "-"
 
         """Таймеры"""
-        label_time_last_start_program = Label(left_down_frame, text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
-        label_time_last_start_program.place(x=0,y=15)
+        label_time_last_start_program = Label(left_down_frame,
+                                              text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
+        label_time_last_start_program.place(x=0, y=15)
 
         """Созаем чеки"""
         checkbut_jp = Checkbutton(left_frame, text="Jp", variable=self.ubroutine_Jp_var, onvalue=1)
@@ -959,8 +942,8 @@ class Main_gui:
         down_frame.place(x=0, y=self.distance_y_root * 2 / 3, height=self.distance_y_root * 1 / 3,
                          width=self.distance_x_root)
 
-        self.progressbar = Progressbar(down_frame, orient="horizontal", variable =self.brogressbar_value_var)
-        self.progressbar.place(x=5,y=0, width=785)
+        self.progressbar = Progressbar(down_frame, orient="horizontal", variable=self.brogressbar_value_var)
+        self.progressbar.place(x=5, y=0, width=785)
 
         self.progresslabel = Label(down_frame, textvariable=self.progresslabel_var)
         self.progresslabel.place(x=0, y=25)
@@ -974,7 +957,6 @@ class Main_gui:
     def change_value_progress_bar_var(self, value_pb):
         self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb)
         self.progressbar.update()
-
 
     def gui_debug_mode(self):
         parent = tk.Toplevel(self.root)
