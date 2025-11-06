@@ -736,7 +736,13 @@ class GuiManager:
         :param len_complite: колличество выполненых данных (не повторяются)
         :param parent: главное окно, к которому подвязывается создаваемое
         """
-        self.root = tk.Toplevel(parent)
+
+        try:
+            self.root = tk.Toplevel(parent)
+
+        except:
+            self.root = tk.Tk()
+
         self.root.title("Выбор параметров")
         self.max_sizeY = 500
         self.root.geometry("600x500")

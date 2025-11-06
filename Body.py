@@ -49,6 +49,7 @@ class Main_gui:
         :param root: окно
         """
 
+        self.start_no_gui_var = False
         self.start_button_var = False
         self.progresslabel_var = StringVar(value="...")
         self.config = JsonWork.JsonConfig()
@@ -116,20 +117,24 @@ class Main_gui:
         except Exception as e:
             print(f"Не удалось установить иконку: {e}")
         self.checking_data_inputs()
-
-        self.create_gui()
+        if not self.start_no_gui_var:
+            self.create_gui()
 
     def start_button_command(self):
-        self.brogressbar_value_var.set(0)
-        self.progressbar.update()
-        self.progresslabel_var.set("Работает...")
+        if not self.start_no_gui_var:
+            self.brogressbar_value_var.set(0)
+            self.progressbar.update()
+            self.progresslabel_var.set("Работает...")
+
+
         if self.ubroutine_Jp_var.get():
             jp_prog = JpProgram.JpMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
-            self.change_value_progress_bar_var(
-                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                        int(self.ubroutine_Bam_var.get())))
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
 
         if self.ubroutine_Cz_var.get():
             if self.dop_date_Cz_var.get():
@@ -138,28 +143,34 @@ class Main_gui:
                 cz_prog = CzMain(self.root)
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
             excelPr.write_to_sheet(cz_prog.main(), "СЗ")
-            self.change_value_progress_bar_var(
-                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                        int(self.ubroutine_Bam_var.get())))
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
-            self.change_value_progress_bar_var(
-                100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                        int(self.ubroutine_Bam_var.get())))
-
-        self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
+        if not self.start_no_gui_var:
+            self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
 
         if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
             ge_prog = GeneProg()
             excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-        self.progresslabel_var.set("Программа завершена!")
-        self.progresslabel.update()
+        if not self.start_no_gui_var:
+            self.progresslabel_var.set("Программа завершена!")
+            self.progresslabel.update()
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
+
+        if self.start_no_gui_var:
+            sys.exit()
 
     def recovery_data_inputs(self, dic_recovery: dict):
         if not self.availability_of_required_data:
@@ -839,6 +850,7 @@ class Main_gui:
         parser.add_argument("--console", action="store_true", help="Запустить с консолью")
         parser.add_argument("--cfile", action="store_true", help="Запустить с консолью")
         parser.add_argument("--pstart", action="store_true", help="Запустить с консолью")
+        parser.add_argument("--nog", action="store_true", help="Запустить с консолью")
 
         args = parser.parse_args()
 
@@ -850,6 +862,15 @@ class Main_gui:
             return None
         if args.pstart:
             self.start_button_var = True
+        if args.nog:
+            self.start_button_var = True
+            self.start_no_gui_var = True
+
+            self.root.destroy()
+            self.root.quit()
+
+            self.start_button_command()
+            return None
         if args.console:
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE

@@ -8,6 +8,8 @@ from JsonWork import JsonConfig
 from Search import SearchGe
 
 
+
+
 class GeneProg:
     def __init__(self):
         self.config = JsonConfig()
@@ -126,12 +128,12 @@ class GeneProg:
                 value = self.data_jp[key_row].get("Задач", "")
                 if len(str(value)) > 7:
                     if int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == now_month:
-                        result_row[int(str(value)[8:10]) + 4 + 3] = (self.data_jp[key_row].get("Переводов", ""))
+                        result_row[int(str(value)[8:10]) + 4 + 3+1] = (self.data_jp[key_row].get("Переводов", ""))
                         varibel_break = True
                         break
                     elif int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == last_month and result[
                         -5].index(int(str(value)[8:10])) < 8:
-                        result_row[int(str(value)[8:10]) - 29 + 5] = (self.data_jp[key_row].get("Переводов", ""))
+                        result_row[int(str(value)[8:10]) - 29 + 5+1] = (self.data_jp[key_row].get("Переводов", ""))
                         varibel_break = True
                         break
 
