@@ -62,6 +62,8 @@ class BamMain:
         self.search = None
         self.listes_excel_last = ""
 
+        self.error_masage_var = False
+
     def headers_sort(self, headers):
         headers.sort()
         headers.remove("")
@@ -94,12 +96,15 @@ class BamMain:
         try:
             i_sort_last = self.headers[-1]
         except:
-            if messagebox.askyesno("Ошибка", "За указанный периуд данных нет. Хотите весь список"):
-                self.headers = self.headers_sort_full(
-                    self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
-                i_sort_last = self.headers[-1]
-            else:
-                return ["ПУСТО"]
+            if not self.error_masage_var:
+                messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
+                self.error_masage_var = True
+                # if messagebox.askyesno("Ошибка", "За указанный периуд данных нет. Хотите весь список"):
+                #     self.headers = self.headers_sort_full(
+                #         self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
+                #     i_sort_last = self.headers[-1]
+                # else:
+                #     return ["ПУСТО"]
 
 
         row_for_count = 0
@@ -146,7 +151,6 @@ class BamMain:
     def main(self):
         """Главное тело"""
         result = []
-
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
             res_0 = res[0]
@@ -160,7 +164,6 @@ class BamMain:
                     i.insert(0,listes_excel)
                 result.append(i)
             result.append([])
-
         return result
 
 

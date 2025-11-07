@@ -8,8 +8,6 @@ from JsonWork import JsonConfig
 from Search import SearchGe
 
 
-
-
 class GeneProg:
     def __init__(self):
         self.config = JsonConfig()
@@ -25,7 +23,6 @@ class GeneProg:
 
     def get_datas_excel(self, start_row=1, start_col=1):
         self.data_jp, self.data_cz, self.data_bam, self.data_ge = self.search_in_sheet.sheet_name_list()
-
 
     def main(self):
         result = []
@@ -93,10 +90,11 @@ class GeneProg:
                 for r_idx, row in enumerate(self.data_jp, 1):
                     for value in self.data_jp[row]:
                         if r_idx == 2:
-                            if int(str(dt.now())[5:7])  == now_month and cdsount==1:
+                            if int(str(dt.now())[5:7]) == now_month and cdsount == 1:
                                 result_row.append(self.data_jp[0].get("Задач", ""))
                                 break
-                            else: cdsount=1
+                            else:
+                                cdsount = 1
 
 
 
@@ -128,24 +126,21 @@ class GeneProg:
                 value = self.data_jp[key_row].get("Задач", "")
                 if len(str(value)) > 7:
                     if int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == now_month:
-                        result_row[int(str(value)[8:10]) + 4 + 3+1] = (self.data_jp[key_row].get("Переводов", ""))
+                        result_row[int(str(value)[8:10]) + 4 + 3 + 1] = (self.data_jp[key_row].get("Переводов", ""))
                         varibel_break = True
                         break
                     elif int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == last_month and result[
                         -5].index(int(str(value)[8:10])) < 8:
-                        result_row[int(str(value)[8:10]) - 29 + 5+1] = (self.data_jp[key_row].get("Переводов", ""))
+                        result_row[int(str(value)[8:10]) - 29 + 5 + 1] = (self.data_jp[key_row].get("Переводов", ""))
                         varibel_break = True
                         break
 
-        # print(result_row)
         result.append(result_row)
 
         for i in range(2): result.append(result_row1.copy())
-        # for i in range(2): result.append(result_row2.copy())
 
         for i in range(1): result.append(result_row1.copy())
         result[-1][0] = "ФОЦ"
-        count_titel = 0
 
         foc_search = "ФОЦ"
         foc_date_list = []
@@ -165,19 +160,22 @@ class GeneProg:
 
             if foc_search == "ФОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    foc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                    foc_date_list.append(
+                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
             if foc_search == "ТОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    toc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                    toc_date_list.append(
+                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
             if foc_search == "ПОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    poc_date_list.append([key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
+                    poc_date_list.append(
+                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
@@ -186,14 +184,18 @@ class GeneProg:
             dateList_cat = []
             for dateList in foc_date_list:
                 try:
+
                     dateList_cat.append(int(dateList[-1][8:10]))
                     if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(dateList[-1][5:7]) == now_month:
                         result_row.append(dateList[0])
-
+                        print(int(dateList[-1][5:7]) == now_month,int(
+                            dateList[-1][5:7]))
                         break
                     if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(
                             dateList[-1][5:7]) == last_month and len(result_row) < 10:
                         result_row.append(dateList[0])
+                        print(int(dateList[-1][5:7]) == now_month,int(
+                            dateList[-1][5:7]))
                         break
                 except:
                     pass
@@ -356,12 +358,10 @@ class GeneProg:
 
         result_row = ["", "", "Итого", "", ""]
 
-
         for column in range(33):
             if int(str(date_cz)[8:10]) == int(result[-24][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(int(egogo))
                 break
-
 
             if not int(result[-24][column + 5]) == int(str(date_cz)[8:10]):
                 result_row.append("")
@@ -380,14 +380,13 @@ class GeneProg:
         result_row = ["", "", "ТОЦ", "", ""]
         for column in range(34):
             if int(str(date_cz)[8:10]) == int(result[-26][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-
                 result_row.append(toc)
                 break
             result_row.append("")
 
         result.append(result_row)
         result_row = ["", "", "ПОЦ", "", ""]
-        countjsa = 0
+
         for column in range(34):
             if int(str(date_cz)[8:10]) == int(result[-27][column + 5]) and int(str(date_cz)[5:7]) == now_month:
                 result_row.append(poc)
@@ -419,8 +418,6 @@ if __name__ == "__main__":
     run = GeneProg()
     config = JsonConfig()
 
-    # for i in run.main():
-    #     print(i)
     excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
 
     excelPr.write_to_sheet(run.main(), "Общая информация")
