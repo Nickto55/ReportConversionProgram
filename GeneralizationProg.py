@@ -1,9 +1,10 @@
+"""Внимание, полоса отображения, и обрезка вставляемых формул, находятся в ExcelPrint, при изменении 5 строчки(оглавления календаря), см. на совместимость"""
+
 import calendar
 from datetime import datetime as dt
 
 import pandas as pd
 
-import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchGe
 
@@ -13,27 +14,38 @@ class GeneProg:
         self.config = JsonConfig()
         self.search_in_sheet = SearchGe()
 
+        self.row_static = []
+        self.now_month = None
+
         self.data_jp = None
         self.data_cz = None
         self.data_bam = None
 
+        self.foc_date_list = []
+        self.toc_date_list = []
+        self.poc_date_list = []
+
         self.data_ge = None
+
+        self.date_day_now = None
+
+        self.date_cz_2 = ""
 
         self.get_datas_excel()
 
     def get_datas_excel(self, start_row=1, start_col=1):
         self.data_jp, self.data_cz, self.data_bam, self.data_ge = self.search_in_sheet.sheet_name_list()
 
-    def main(self):
-        result = []
-
+    def create_calendar(self):
         """Создание календаря, для таблицы"""
-        result_row1 = ["" for i in range(38)]
+
+        result = []
+        self.row_static = ["" for i in range(38)]
         result_row2 = ["" for i in range(8)]
         result_row2.append(r"\..../")
         for i in range(29):
             result_row2.append(r"\.../")
-        for i in range(4): result.append(result_row1.copy())
+        for i in range(4): result.append(self.row_static.copy())
         date_str = str(dt.now())[:10]
         current_year = int(date_str[:4])
         current_month = int(date_str[5:7])
@@ -49,11 +61,12 @@ class GeneProg:
 
         result[0][0] = date_str
         date_object = dt.strptime(date_str, '%Y-%m-%d')
+        self.date_day_now = int(str(date_object)[8:10])
         titel_mounth_last = (date_str_last.strftime('%B'))
         titel_mounth_now = date_object.strftime('%B')
         count_day_now_mounth = list(calendar.monthrange(current_year, current_month))[-1]
         last_month = last_month_num
-        now_month = current_month
+        self.now_month = current_month
         count_day_last_mounth = list(calendar.monthrange(last_year, last_month))[-1]
 
         result_row = []
@@ -75,80 +88,111 @@ class GeneProg:
             result_row.append(i)
         result.append(result_row)
 
-        """Календарь окончен"""
+        return result
 
-        for i in range(3):
-            result.append(result_row1.copy())
+    # def надо сделать функцию, которая будет вводить \..../ для создания формул в нутри табл.
+    def form_gen(self, result, row_idx, column_idx):
+        if result[5][column_idx] <= self.date_day_now:
+            if column_idx == 8:
+                num_form = 1
+            else:
+                num_form = 2
+            if num_form == 1: result[row_idx][column_idx]=r"\..../"
+            if num_form == 2: result[row_idx][column_idx]=r"\.../"
 
-        result[-1][0] = "ЖП"
 
-        result_row = ["", "", "Всего ЖП"]
+    def chapter_gen(self, result: list, name_chapter: str, first_subsection: str, second_subsection: str,
+                    thead_subsection: str = None, subsection_last: str = None):
+
+        for i in range(3): result.append(self.row_static.copy())
+
+        result[-1][0] = name_chapter
+
+        result_row = ["", "", first_subsection]
+        for i in range(35): result_row.append("")
+        result.append(result_row)
+
+        result_row = ["", "", second_subsection, "", ""]
+        for i in range(33): result_row.append("")
+        result.append(result_row)
+
+        if thead_subsection is not None:
+            result_row = ["", "", thead_subsection, "", ""]
+            for i in range(33): result_row.append("")
+            result.append(result_row)
+            result_row = ["", "", subsection_last, "", ""]
+            for i in range(33): result_row.append("")
+            result.append(result_row)
+
+        return result
+
+    def filling_data(self, result):
+        for row_idx in range(len(result)):
+            if row_idx < 8: continue
+            for column_idx in range(len(result[row_idx])):
+                if column_idx < 8: continue
+                if row_idx == 9: self.jp_row_value_now(result, column_idx, row_idx)
+                if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Переводов")
+
+                if row_idx == 14: self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
+                if row_idx == 15: self.bam_row_value_now(result, row_idx, column_idx, 1,self.foc_date_list)
+
+                if row_idx == 19: self.bam_row_value_now(result, row_idx, column_idx, 0, self.toc_date_list)
+                if row_idx == 20: self.bam_row_value_now(result, row_idx, column_idx, 1,self.toc_date_list)
+
+                if row_idx == 24: self.bam_row_value_now(result, row_idx, column_idx, 0, self.poc_date_list)
+                if row_idx == 25: self.bam_row_value_now(result, row_idx, column_idx, 1,self.poc_date_list)
+
+                if row_idx == 29: self.ldklds(result, row_idx, column_idx, self.egogo)
+                if row_idx == 30: self.ldklds(result, row_idx, column_idx, self.foc)
+                if row_idx == 31: self.ldklds(result, row_idx, column_idx, self.toc)
+                if row_idx == 32: self.ldklds(result, row_idx, column_idx, self.poc)
+
+                # Обзначение места формул
+                if row_idx in [16,17,21,22,26,27]: self.form_gen(result, row_idx, column_idx)
+
+
+        return result
+
+    def ldklds(self, result, row_idx, column_idx, value):
+        if int(str(self.date_cz_2)[8:10]) == int(result[5][column_idx]) and int(str(self.date_cz_2)[5:7]) == self.now_month:
+            result[row_idx][column_idx] = int(value)
+
+    def bam_row_value_now(self, result, row_idx, column_idx, depth, date_list):
+        dateList_cat = []
+        for dateList in date_list:
+            try:
+
+                dateList_cat.append(int(dateList[-1][8:10]))
+                if int(dateList[-1][8:10]) == int(result[5][column_idx]) and int(dateList[-1][5:7]) == self.now_month:
+                    result[row_idx][column_idx] = dateList[depth]
+                    break
+            except:
+                pass
+
+    def jp_row_value_now(self, result, column_idx, row_idx, column_name_data: str = "Задач"):
         cdsount = 0
 
-        for i in range(3, 38):
-            if result[-4][i] == int(str(dt.now())[8:10]):
-                for r_idx, row in enumerate(self.data_jp, 1):
-                    for value in self.data_jp[row]:
-                        if r_idx == 2:
-                            if int(str(dt.now())[5:7]) == now_month and cdsount == 1:
-                                result_row.append(self.data_jp[0].get("Задач", ""))
-                                break
-                            else:
-                                cdsount = 1
+        if result[5][column_idx] == int(str(dt.now())[8:10]):
+            for r_idx, row in enumerate(self.data_jp, 1):
+                for value in self.data_jp[row]:
+                    if r_idx == 2:
+                        if int(str(dt.now())[5:7]) == self.now_month and cdsount == 1:
+                            result[row_idx][column_idx] = self.data_jp[0].get(column_name_data, "")
+                            break
+                        else:
+                            cdsount = 1
 
+    def main(self):
+        result = self.create_calendar()
 
-
-            else:
-                result_row.append("")
-
-        result.append(result_row)
-
-        result_row = ["", "", "Выполнено ЖП", "", ""]
-        for i in range(33):
-            result_row.append("")
-
-        for key_row in self.data_jp.keys():
-            varibel_break = False
-            for c_idx in self.data_jp[key_row].keys():
-                if key_row < 3:
-                    continue
-                if pd.isna(self.data_jp[key_row].get("Задач", "")):
-                    break
-
-                try:
-                    int(self.data_jp[key_row].get("Переводов", ""))
-                except:
-                    continue
-
-                if varibel_break:
-                    result_row.append("")
-                    break
-                value = self.data_jp[key_row].get("Задач", "")
-                if len(str(value)) > 7:
-                    if int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == now_month:
-                        result_row[int(str(value)[8:10]) + 4 + 3 + 1] = (self.data_jp[key_row].get("Переводов", ""))
-                        varibel_break = True
-                        break
-                    elif int(str(value)[8:10]) in result[-5] and int(str(value)[5:7]) == last_month and result[
-                        -5].index(int(str(value)[8:10])) < 8:
-                        result_row[int(str(value)[8:10]) - 29 + 5 + 1] = (self.data_jp[key_row].get("Переводов", ""))
-                        varibel_break = True
-                        break
-
-        result.append(result_row)
-
-        for i in range(2): result.append(result_row1.copy())
-
-        for i in range(1): result.append(result_row1.copy())
-        result[-1][0] = "ФОЦ"
+        self.chapter_gen(result, "ЖП", "Всего ЖП", "Выполнено ЖП")
+        self.chapter_gen(result, "ФОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
+        self.chapter_gen(result, "ТОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
+        self.chapter_gen(result, "ПОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
+        self.chapter_gen(result, "СЗ", "Итого", "ФОЦ", "ТОЦ", "ПОЦ")
 
         foc_search = "ФОЦ"
-        foc_date_list = []
-        toc_date_list = []
-        poc_date_list = []
-
-        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
-
         for key_row in self.data_bam.values():
             for key_col in key_row.items():
 
@@ -160,177 +204,26 @@ class GeneProg:
 
             if foc_search == "ФОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    foc_date_list.append(
+                    self.foc_date_list.append(
                         [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
             if foc_search == "ТОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    toc_date_list.append(
+                    self.toc_date_list.append(
                         [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
             if foc_search == "ПОЦ":
                 if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    poc_date_list.append(
+                    self.poc_date_list.append(
                         [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
                 elif pd.isna(key_row.get("Дата", "")):
                     continue
 
-        for column in range(33):
-            """ФОЦ"""
-            dateList_cat = []
-            for dateList in foc_date_list:
-                try:
-
-                    dateList_cat.append(int(dateList[-1][8:10]))
-                    if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[0])
-                        print(int(dateList[-1][5:7]) == now_month,int(
-                            dateList[-1][5:7]))
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-9][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[0])
-                        print(int(dateList[-1][5:7]) == now_month,int(
-                            dateList[-1][5:7]))
-                        break
-                except:
-                    pass
-            if not int(result[-9][column + 5]) in dateList_cat:
-                result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "Выполнено за день, УП", "", ""]
-        for column in range(33):
-            """ФОЦ"""
-            dateList_cat = []
-            for dateList in foc_date_list:
-                try:
-                    dateList_cat.append(int(dateList[-1][8:10]))
-                    if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[1])
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-10][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[1])
-                        break
-                except:
-                    pass
-            if not int(result[-10][column + 5]) in dateList_cat:
-                result_row.append("")
-
-        result.append(result_row)
-
-        for i in range(2): result.append(result_row2.copy())
-        for i in range(1): result.append(result_row1.copy())
-        result[-1][0] = "ТОЦ"
-
-        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
-
-        for column in range(33):
-            """ТОЦ"""
-            dateList_cat = []
-            for dateList in toc_date_list:
-                try:
-                    dateList_cat.append(int(dateList[-1][8:10]))
-
-                    if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[0])
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-14][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[0])
-                        break
-                except:
-                    pass
-            if not int(result[-14][column + 5]) in dateList_cat:
-                result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "Выполнено за день, УП", "", ""]
-        for column in range(33):
-            """ТОЦ"""
-            dateList_cat = []
-            for dateList in toc_date_list:
-                try:
-                    dateList_cat.append(int(dateList[-1][8:10]))
-                    if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[1])
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-15][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[1])
-                        break
-
-                except:
-                    pass
-            if not int(result[-15][column + 5]) in dateList_cat:
-                result_row.append("")
-
-        result.append(result_row)
-
-        for i in range(2): result.append(result_row2.copy())
-        for i in range(1): result.append(result_row1.copy())
-        result[-1][0] = "ПОЦ"
-
-        result_row = ["", "", "Выполнено за день, ДСЕ", "", ""]
-
-        for column in range(33):
-            """ПОЦ"""
-            dateList_cat = []
-            for dateList in poc_date_list:
-                try:
-                    dateList_cat.append(int(dateList[-1][8:10]))
-                    if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[0])
-
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-19][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[0])
-                        break
-                except:
-                    pass
-            if not int(result[-19][column + 5]) in dateList_cat:
-                result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "Выполнено за день, УП", "", ""]
-        for column in range(33):
-            """ПОЦ"""
-            dateList_cat = []
-            for dateList in poc_date_list:
-                try:
-                    dateList_cat.append(int(dateList[-1][8:10]))
-                    if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(dateList[-1][5:7]) == now_month:
-                        result_row.append(dateList[1])
-
-                        break
-                    if int(dateList[-1][8:10]) == int(result[-20][column + 5]) and int(
-                            dateList[-1][5:7]) == last_month and len(result_row) < 10:
-                        result_row.append(dateList[1])
-                        break
-                except:
-                    pass
-            if not int(result[-20][column + 5]) in dateList_cat:
-                result_row.append("")
-        result.append(result_row)
-
-        for i in range(2): result.append(result_row2.copy())
-        for i in range(1): result.append(result_row1.copy())
-        result[-1][0] = "СЗ"
-
-        foc_search = "Дата:"
-        date_cz = ""
-
-        egogo = 0
-        foc = 0
-        toc = 0
-        poc = 0
-
+        foc_search = ""
         for key_row in self.data_cz.values():
             for key_col in key_row.items():
                 if "Итого" in key_col:
@@ -342,61 +235,23 @@ class GeneProg:
                 elif "ПОЦ" in key_col:
                     foc_search = "ПОЦ"
                 break
-            if foc_search == "Дата:":
+
+            if key_col[0] == "Дата:":
                 for key_s in key_row.keys():
                     if len(str(key_s)) > 9:
-                        date_cz = key_s
+                        self.date_cz_2 = key_s
                         break
             if foc_search == "Итого":
-                egogo = int(key_row.get(date_cz, ""))
+                self.egogo = int(key_row.get(self.date_cz_2, ""))
             if foc_search == "ФОЦ":
-                foc = int(key_row.get(date_cz, ""))
+                self.foc = int(key_row.get(self.date_cz_2, ""))
             if foc_search == "ТОЦ":
-                toc = int(key_row.get(date_cz, ""))
+                self.toc = int(key_row.get(self.date_cz_2, ""))
             if foc_search == "ПОЦ":
-                poc = (key_row.get(date_cz, ""))
+                self.poc = (key_row.get(self.date_cz_2, ""))
 
-        result_row = ["", "", "Итого", "", ""]
+        self.filling_data(result)
 
-        for column in range(33):
-            if int(str(date_cz)[8:10]) == int(result[-24][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(int(egogo))
-                break
-
-            if not int(result[-24][column + 5]) == int(str(date_cz)[8:10]):
-                result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "ФОЦ", "", ""]
-
-        for column in range(33):
-            if int(str(date_cz)[8:10]) == int(result[-25][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(foc)
-                break
-            if not int(result[-25][column + 5]) == int(str(date_cz)[8:10]):
-                result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "ТОЦ", "", ""]
-        for column in range(34):
-            if int(str(date_cz)[8:10]) == int(result[-26][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(toc)
-                break
-            result_row.append("")
-
-        result.append(result_row)
-        result_row = ["", "", "ПОЦ", "", ""]
-
-        for column in range(34):
-            if int(str(date_cz)[8:10]) == int(result[-27][column + 5]) and int(str(date_cz)[5:7]) == now_month:
-                result_row.append(poc)
-                break
-            if not int(result[-27][column + 5]) == int(str(date_cz)[8:10]):
-                result_row.append("")
-
-        result.append(result_row)
-
-        for i in range(2): result.append(result_row1.copy())
         result.append(["" for i in range(59)])
         result[-1].append("V2.01.color")
 
@@ -415,9 +270,7 @@ class GeneProg:
 
 
 if __name__ == "__main__":
-    run = GeneProg()
-    config = JsonConfig()
-
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
-
-    excelPr.write_to_sheet(run.main(), "Общая информация")
+    app = GeneProg()
+    for i in app.main():
+        print(i)
+    # app.create_calendar()

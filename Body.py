@@ -848,9 +848,9 @@ class Main_gui:
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--console", action="store_true", help="Запустить с консолью")
-        parser.add_argument("--cfile", action="store_true", help="Запустить с консолью")
-        parser.add_argument("--pstart", action="store_true", help="Запустить с консолью")
-        parser.add_argument("--nog", action="store_true", help="Запустить с консолью")
+        parser.add_argument("--cfile", action="store_true", help="Конфиг файла")
+        parser.add_argument("--pstart", action="store_true", help="Моментальный старт")
+        parser.add_argument("--nog", action="store_true", help="Без граф. оболочки")
 
         args = parser.parse_args()
 

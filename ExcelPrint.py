@@ -1,8 +1,10 @@
 import os
+from datetime import datetime as dt
 
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
+from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
 
 import JsonWork
@@ -30,8 +32,15 @@ class ExcelWriter:
         self.fill_color2 = PatternFill(start_color="aaadb2", fill_type="solid")
         self.fill_color3 = PatternFill(start_color="d9d9d9", fill_type="solid")
         self.fill_color4 = PatternFill(start_color="808080", fill_type="solid")
+        self.fill_color5 = PatternFill(start_color="D7E4BC", fill_type="solid")
 
-        self.alfavit = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
+        self.thin_border = Border(left=Side(style='thin'),
+                                  right=Side(style='thin'),
+                                  top=Side(style='thin'),
+                                  bottom=Side(style='thin'))
+
+        self.alfavit = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA',
+                        'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
 
         self.config = JsonWork.JsonConfig()
 
@@ -128,15 +137,25 @@ class ExcelWriter:
                                 if r_idx in [6, 0] and value != "":
                                     cell.fill = self.fill_color1
                                     cell.font = Font(color="f2ecde")
-                                if (c_idx in [3, 0] and value != "") or(r_idx == 5 and c_idx > 8):
+                                if (c_idx in [3, 0] and value != "") or (r_idx == 5 and c_idx > 8):
                                     cell.fill = self.fill_color3
                                     cell.font = Font(color="000000")
                                 if r_idx == 5 and 5 < c_idx < 9:
                                     cell.fill = self.fill_color4
                                     cell.font = Font(color="000000")
+                                if 8 < c_idx < len(data[5]):
+                                    if int(str(dt.now())[8:10]) == data[5][c_idx] and r_idx in [13, 10, 11, 12, 18, 15,
+                                                                                                16, 17, 23, 20, 21, 22,
+                                                                                                28, 25, 26, 27, 33, 30,
+                                                                                                31, 32]:
+                                        cell.fill = self.fill_color5
+                                        cell.border = self.thin_border
+                                        cell.font = Font(color="000000")
 
-                                if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}")
-                                if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx-9]}{r_idx-2}+{self.alfavit[c_idx-10]}{r_idx}")
+                                if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx,
+                                                                         value=f"={self.alfavit[c_idx - 9]}{r_idx - 2}")
+                                if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx,
+                                                                        value=f"={self.alfavit[c_idx - 9]}{r_idx - 2}+{self.alfavit[c_idx - 10]}{r_idx}")
                         auto_fit_columns(sheet)
                         for i in self.alfavit:
                             sheet.column_dimensions[f'{i}'].width = 3.7

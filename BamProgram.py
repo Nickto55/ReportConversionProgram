@@ -93,18 +93,14 @@ class BamMain:
             break
         result_row.append("/::/")
         result.append(result_row)
+        i_sort_last = ""
         try:
             i_sort_last = self.headers[-1]
         except:
             if not self.error_masage_var:
                 messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
                 self.error_masage_var = True
-                # if messagebox.askyesno("Ошибка", "За указанный периуд данных нет. Хотите весь список"):
-                #     self.headers = self.headers_sort_full(
-                #         self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
-                #     i_sort_last = self.headers[-1]
-                # else:
-                #     return ["ПУСТО"]
+                return ["ПУСТО"]
 
 
         row_for_count = 0
@@ -114,7 +110,6 @@ class BamMain:
         count_dse2 = 0
         count_up2 = 0
 
-        dete_last = 0
         for i_sort in self.headers:
             if i_sort_last != i_sort or self.listes_excel_last != listes_excel:
                 if self.listes_excel_last != listes_excel:
