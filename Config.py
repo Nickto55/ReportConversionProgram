@@ -8,7 +8,7 @@ configProgram = {
 
         "Size by X": 800,
         "Size by Y": 340,
-        "Cimb plus":4
+        "Cimb plus": 4
 
     },
     "ЖП": {
@@ -72,11 +72,13 @@ configProgram = {
         "Table of contents: listes_excel": ["ФОЦ", "ТОЦ", "ПОЦ"],
         "Table of contents: List_date": 4
     },
-    "Ge":{
-        "Sheet name list": ["ЖП","СЗ","Бам по УП", "Общая информация"]
+    "Ge": {
+        "Sheet name list": ["ЖП", "СЗ", "Бам по УП", "Общая информация"],
+        "last 3 day in mounth": {
+        }
     }
 }
-        # "Sheet name list": ["ЖП","СЗ","Бам по УП","Общая информация"]
+# "Sheet name list": ["ЖП","СЗ","Бам по УП","Общая информация"]
 
 keys_for_unnecessary_data = {
     "Program:": [
@@ -107,5 +109,7 @@ keys_for_unnecessary_data = {
         "Path for input excel",
         "Path for output excel"
     ],
-    "Ge":[]
+    "Ge": [
+        "last 3 day in mounth"
+    ]
 }

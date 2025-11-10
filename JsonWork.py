@@ -48,7 +48,7 @@ class JsonConfig:
     def save(self):
         """Сохраняет текущие данные в файл."""
         with open(self.file_path, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=4)
+            json.dump(self.data, f, indent=4,ensure_ascii=False)
         self.load()
 
     def _ensure_file_exists(self):
@@ -56,7 +56,7 @@ class JsonConfig:
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
         if not os.path.exists(self.file_path):
             with open(self.file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, indent=4)
+                json.dump(self.data, f, indent=4,ensure_ascii=False)
 
     def load(self):
         """Загружает данные из файла."""
@@ -355,6 +355,16 @@ class JsonConfig:
     def getSheetNameList(self):
         data = self.data["Ge"]
         return data.get("Sheet name list", "")
+
+    def get_ge_last_days(self):
+        data = self.data["Ge"]
+        return data.get("last 3 day in mounth", "")
+
+    def set_ge_last_days(self, Mounth, data):
+
+
+        self.data["Ge"]["last 3 day in mounth"][Mounth] = data
+        self.save()
 
 
 if __name__ == "__main__":
