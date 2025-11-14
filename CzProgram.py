@@ -1,8 +1,9 @@
 import os
 import sys
 import tkinter as tk
-from datetime import date, timedelta, datetime
-from tkinter import messagebox, ttk, Label, Scrollbar, StringVar, Button, Spinbox
+
+from datetime import timedelta, datetime as dt
+from tkinter import messagebox, ttk, Label, StringVar, Button, Spinbox
 
 import pandas as pd
 import plyer
@@ -29,33 +30,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def get_dates(len_date: int, len_date_value: int = 3, year: bool = False):
-    """
-    Возвращает список из трех лет: позавчерашней, вчерашней и сегодняшней.
-
-    """
-    result_list = []
-    today = date.today()
-
-    for i in range(0, len_date):
-        if year:
-            date_form = today - timedelta(days=i * 365)
-        else:
-            date_form = today - timedelta(days=i)
-        if len_date_value == 1:
-            format_str = "%Y"
-        elif len_date_value == 2:
-            format_str = "%Y-%m"
-        else:
-            format_str = "%Y-%m-%d"
-        result_list.append(date.strftime(date_form, format_str))
-
-    return result_list
 
 
 class CzMain:
 
-    def __init__(self, parent, accepted_chuse_user: bool = False, dop_date: int = None):
+    def __init__(self, parent, accepted_chuse_user: bool = False, dop_date: int = None,mask_date:str = str(dt.now())):
         self.parent = parent
         self.config = JsonWork.JsonConfig()
 
@@ -68,6 +47,30 @@ class CzMain:
         self.accepted_no_repit = None
         self.accepted_chuse_user = accepted_chuse_user
         self.rc_no_repit = None
+        self.mask_date = mask_date
+
+    def get_dates(self, len_date: int, len_date_value: int = 3, year: bool = False):
+        """
+        Возвращает список из трех лет: позавчерашней, вчерашней и сегодняшней.
+
+        """
+        result_list = []
+        today = dt.strptime(self.mask_date[:10], '%Y-%m-%d')
+
+        for i in range(0, len_date):
+            if year:
+                date_form = today - timedelta(days=i * 365)
+            else:
+                date_form = today - timedelta(days=i)
+            if len_date_value == 1:
+                format_str = "%Y"
+            elif len_date_value == 2:
+                format_str = "%Y-%m"
+            else:
+                format_str = "%Y-%m-%d"
+            result_list.append(dt.strftime(date_form, format_str))
+
+        return result_list
 
     def recovery_lose_hearder(self, lose_helder_in_program: list, lose_helder_in_config: list):
         def command_button(header, header_in_configs):
@@ -104,16 +107,16 @@ class CzMain:
     def main(self):
         result = []
         modification_time = os.path.getmtime(self.config.getCzPathFile_input())
-        file_date = datetime.fromtimestamp(modification_time)
+        file_date = dt.fromtimestamp(modification_time)
         result_row = ["Дата:", file_date, ""]
 
-        for year in get_dates(int(self.config.getCzColumnName("Table of contents: List_date")), 1, True):
+        for year in self.get_dates(int(self.config.getCzColumnName("Table of contents: List_date")), 1, True):
             result_row.append(year)
         result.append(result_row)
 
         result_row = ["", "", "", "", "", "", ""]
         result.append(result_row)
-        listDate = get_dates(int(self.config.getCzColumnName("Table of contents: List_date")), 1, year=True)
+        listDate = self.get_dates(int(self.config.getCzColumnName("Table of contents: List_date")), 1, year=True)
 
         count_conversion = 0
 

@@ -40,7 +40,7 @@ class ExcelWriter:
                                   bottom=Side(style='thin'))
 
         self.alfavit = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA',
-                        'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL']
+                        'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM','AN']
 
         self.config = JsonWork.JsonConfig()
 
@@ -154,8 +154,11 @@ class ExcelWriter:
 
                                 if value == r"\..../": cell = sheet.cell(row=r_idx, column=c_idx,
                                                                          value=f"={self.alfavit[c_idx - 9]}{r_idx - 2}")
-                                if value == r"\.../": cell = sheet.cell(row=r_idx, column=c_idx,
-                                                                        value=f"={self.alfavit[c_idx - 9]}{r_idx - 2}+{self.alfavit[c_idx - 10]}{r_idx}")
+                                if value == r"\.../":
+                                    try:
+                                        cell = sheet.cell(row=r_idx, column=c_idx, value=f"={self.alfavit[c_idx - 9]}{r_idx - 2}+{self.alfavit[c_idx - 10]}{r_idx}")
+                                    except:
+                                        pass
                         auto_fit_columns(sheet)
                         for i in self.alfavit:
                             sheet.column_dimensions[f'{i}'].width = 3.7

@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import timedelta, datetime as dt
+
 
 import pandas as pd
 import plyer
@@ -10,20 +11,7 @@ import Search
 
 
 
-def get_dates(len_date: int):
-    """
-    Возвращает список из трех дат: позавчерашней, вчерашней и сегодняшней.
 
-    """
-    result_list = []
-    today = date.today()
-
-    for i in range(0, len_date):
-        date_form = today - timedelta(days=i)
-        format_str = "%Y-%m-%d"
-        result_list.append(date.strftime(date_form, format_str))
-
-    return result_list
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -36,7 +24,7 @@ def send_notification(title, message, settime=15, file_path=""):
 
 
 class JpMain:
-    def __init__(self, count_prog = None, root = None):
+    def __init__(self, count_prog = None, root = None, mask_date:str = str(dt.now())):
         self.config = JsonWork.JsonConfig()
         self.root = root
 
@@ -44,8 +32,25 @@ class JpMain:
 
         search = Search.SearchJP()
         self.data = search.get_dict_all_data()
-        # self.first_t()
-        # self.second_t()
+        self.mask_date = mask_date
+
+    # Получаем список дат
+    def get_dates(self,len_date: int):
+        """
+        Возвращает список из трех дат: позавчерашней, вчерашней и сегодняшней.
+
+        """
+        result_list = []
+        today = dt.strptime(self.mask_date[:10], '%Y-%m-%d')
+
+        for i in range(0, len_date):
+            date_form = today - timedelta(days=i)
+            format_str = "%Y-%m-%d"
+            result_list.append(dt.strftime(date_form, format_str))
+
+
+
+        return result_list
 
     def first_t(self):
         result = []
@@ -83,8 +88,8 @@ class JpMain:
                 if n1 == "+":
                     count_conversion += 1
 
-        # Получаем список дат
-        date_list = get_dates(int(self.config.getJPColumnName("Table of contents: List_date")))
+
+        date_list = self.get_dates(int(self.config.getJPColumnName("Table of contents: List_date")))
 
         # Словарь для хранения результатов по датам
         date_stats = {}

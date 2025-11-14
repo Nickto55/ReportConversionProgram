@@ -6,12 +6,14 @@ from datetime import datetime as dt
 
 import pandas as pd
 
+import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchGe
 
 
 class GeneProg:
-    def __init__(self):
+    def __init__(self, mask_date: str = str(dt.now())):
+        self.count_day_last_mounth: str = ""
         self.config = JsonConfig()
         self.search_in_sheet = SearchGe()
 
@@ -33,6 +35,7 @@ class GeneProg:
         self.titel_mounth_last = None
 
         self.date_cz_2 = ""
+        self.mask_date = mask_date
 
         self.get_datas_excel()
 
@@ -43,13 +46,13 @@ class GeneProg:
         """Создание календаря, для таблицы"""
 
         result = []
-        self.row_static = ["" for i in range(38)]
+        self.row_static = ["" for i in range(39)]
         result_row2 = ["" for i in range(8)]
         result_row2.append(r"\..../")
         for i in range(29):
             result_row2.append(r"\.../")
         for i in range(4): result.append(self.row_static.copy())
-        date_str = str(dt.now())[:10]
+        date_str = self.mask_date[:10]
         current_year = int(date_str[:4])
         current_month = int(date_str[5:7])
 
@@ -73,6 +76,8 @@ class GeneProg:
         last_month = last_month_num
         self.now_month = current_month
         count_day_last_mounth = list(calendar.monthrange(last_year, last_month))[-1]
+        self.count_day_last_mounth = count_day_last_mounth
+        self.last_mouns_last_day = str(date_str_last)[:8] + str(count_day_last_mounth)
 
         result_row = []
 
@@ -95,15 +100,17 @@ class GeneProg:
 
         return result
 
-    # def надо сделать функцию, которая будет вводить \..../ для создания формул в нутри табл.
     def form_gen(self, result, row_idx, column_idx):
-        if result[5][column_idx] <= self.date_day_now:
-            if column_idx == 8:
-                num_form = 1
-            else:
-                num_form = 2
-            if num_form == 1: result[row_idx][column_idx] = r"\..../"
-            if num_form == 2: result[row_idx][column_idx] = r"\.../"
+        try:
+            if result[5][column_idx] <= self.date_day_now:
+                if column_idx == 8:
+                    num_form = 1
+                else:
+                    num_form = 2
+                if num_form == 1: result[row_idx][column_idx] = r"\..../"
+                if num_form == 2: result[row_idx][column_idx] = r"\.../"
+        except Exception as e:
+            print(e, f":\n    len(result[5]):{len(result[5])}, column_idx:{column_idx}")
 
     def chapter_gen(self, result: list, name_chapter: str, first_subsection: str, second_subsection: str,
                     thead_subsection: str = None, subsection_last: str = None):
@@ -113,19 +120,19 @@ class GeneProg:
         result[-1][0] = name_chapter
 
         result_row = ["", "", first_subsection]
-        for i in range(35): result_row.append("")
+        for i in range(36): result_row.append("")
         result.append(result_row)
 
         result_row = ["", "", second_subsection, "", ""]
-        for i in range(33): result_row.append("")
+        for i in range(34): result_row.append("")
         result.append(result_row)
 
         if thead_subsection is not None:
             result_row = ["", "", thead_subsection, "", ""]
-            for i in range(33): result_row.append("")
+            for i in range(34): result_row.append("")
             result.append(result_row)
             result_row = ["", "", subsection_last, "", ""]
-            for i in range(33): result_row.append("")
+            for i in range(34): result_row.append("")
             result.append(result_row)
 
         return result
@@ -135,32 +142,35 @@ class GeneProg:
             if row_idx < 8: continue
             for column_idx in range(len(result[row_idx])):
                 if column_idx < 8: continue
-                if row_idx == 9: self.jp_row_value_now(result, column_idx, row_idx)
-                if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Переводов")
+                if column_idx < len(result[5]):
 
-                if row_idx == 14: self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
-                if row_idx == 15: self.bam_row_value_now(result, row_idx, column_idx, 1, self.foc_date_list)
+                    if row_idx == 9: self.jp_row_value_now(result, column_idx, row_idx)
+                    if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Переводов")
 
-                if row_idx == 19: self.bam_row_value_now(result, row_idx, column_idx, 0, self.toc_date_list)
-                if row_idx == 20: self.bam_row_value_now(result, row_idx, column_idx, 1, self.toc_date_list)
+                    if row_idx == 14: self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
+                    if row_idx == 15: self.bam_row_value_now(result, row_idx, column_idx, 1, self.foc_date_list)
 
-                if row_idx == 24: self.bam_row_value_now(result, row_idx, column_idx, 0, self.poc_date_list)
-                if row_idx == 25: self.bam_row_value_now(result, row_idx, column_idx, 1, self.poc_date_list)
+                    if row_idx == 19: self.bam_row_value_now(result, row_idx, column_idx, 0, self.toc_date_list)
+                    if row_idx == 20: self.bam_row_value_now(result, row_idx, column_idx, 1, self.toc_date_list)
 
-                if row_idx == 29: self.ldklds(result, row_idx, column_idx, self.egogo)
-                if row_idx == 30: self.ldklds(result, row_idx, column_idx, self.foc)
-                if row_idx == 31: self.ldklds(result, row_idx, column_idx, self.toc)
-                if row_idx == 32: self.ldklds(result, row_idx, column_idx, self.poc)
+                    if row_idx == 24: self.bam_row_value_now(result, row_idx, column_idx, 0, self.poc_date_list)
+                    if row_idx == 25: self.bam_row_value_now(result, row_idx, column_idx, 1, self.poc_date_list)
 
-                # Обзначение места формул
-                if row_idx in [16, 17, 21, 22, 26, 27]: self.form_gen(result, row_idx, column_idx)
+                    if row_idx == 29: self.ldklds(result, row_idx, column_idx, self.egogo)
+                    if row_idx == 30: self.ldklds(result, row_idx, column_idx, self.foc)
+                    if row_idx == 31: self.ldklds(result, row_idx, column_idx, self.toc)
+                    if row_idx == 32: self.ldklds(result, row_idx, column_idx, self.poc)
+
+                    # Обзначение места формул
+                    if row_idx in [16, 17, 21, 22, 26, 27]: self.form_gen(result, row_idx, column_idx)
 
         return result
 
     def ldklds(self, result, row_idx, column_idx, value):
-        if int(str(self.date_cz_2)[8:10]) == int(result[5][column_idx]) and int(
-                str(self.date_cz_2)[5:7]) == self.now_month:
-            result[row_idx][column_idx] = int(value)
+        if column_idx < len(result[5]):
+            if int(str(self.date_cz_2)[8:10]) == int(result[5][column_idx]) and int(
+                    str(self.date_cz_2)[5:7]) == self.now_month:
+                result[row_idx][column_idx] = int(value)
 
     def bam_row_value_now(self, result, row_idx, column_idx, depth, date_list):
         dateList_cat = []
@@ -171,21 +181,23 @@ class GeneProg:
                 if int(dateList[-1][8:10]) == int(result[5][column_idx]) and int(dateList[-1][5:7]) == self.now_month:
                     result[row_idx][column_idx] = dateList[depth]
                     break
-            except:
+            except Exception as e:
+                print("bam_row_value_now", e)
                 pass
 
     def jp_row_value_now(self, result, column_idx, row_idx, column_name_data: str = "Задач"):
         cdsount = 0
 
-        if result[5][column_idx] == int(str(dt.now())[8:10]):
-            for r_idx, row in enumerate(self.data_jp, 1):
-                for value in self.data_jp[row]:
-                    if r_idx == 2:
-                        if int(str(dt.now())[5:7]) == self.now_month and cdsount == 1:
-                            result[row_idx][column_idx] = self.data_jp[0].get(column_name_data, "")
-                            break
-                        else:
-                            cdsount = 1
+        if column_idx < len(result[5]):
+            if result[5][column_idx] == int(self.mask_date[8:10]):
+                for r_idx, row in enumerate(self.data_jp, 1):
+                    for value in self.data_jp[row]:
+                        if r_idx == 2:
+                            if int(self.mask_date[5:7]) == self.now_month and cdsount == 1:
+                                result[row_idx][column_idx] = self.data_jp[0].get(column_name_data, "")
+                                break
+                            else:
+                                cdsount = 1
 
     def main(self):
         result = self.create_calendar()
@@ -257,24 +269,21 @@ class GeneProg:
         self.filling_data(result)
 
         """Проверка какой сейчас месяц, для сохранения данных в конфиге и само сохранение"""
-        # if self.config.get_ge_last_days() != {}:
-        #
-        #
-        #     self.config.set_ge_last_days("khjhkkkkkkkkkkkkkkkj",{"dshfkhsdk":"sdkahkdsaj","hjdhjjds":"sklsdajkl"})
 
         result.append(["" for i in range(59)])
         result[-1].append("V2.01.color")
 
         if not self.data_ge is None:
-            for r_idx, row in enumerate(self.data_ge):
-                for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
-                    if len(result) > r_idx:
-                        if len(result[r_idx]) > c_idx:
-                            if c_idx < 3 or r_idx < 3:
-                                continue
-                            if result[r_idx][c_idx] == "" and not pd.isna(
-                                    self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")):
-                                result[r_idx][c_idx] = self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")
+            if int(str(list(self.data_ge.get(0).keys())[0])[5:7]) == int(self.mask_date[5:7]):
+                for r_idx, row in enumerate(self.data_ge):
+                    for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
+                        if len(result) > r_idx:
+                            if len(result[r_idx]) > c_idx:
+                                if c_idx < 3 or r_idx < 3:
+                                    continue
+                                if result[r_idx][c_idx] == "" and not pd.isna(
+                                        self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")):
+                                    result[r_idx][c_idx] = self.data_ge[r_idx - 1].get(f"Unnamed: {c_idx}", "")
 
         self.config.set_ge_last_days(self.titel_mounth_now, self.month_data_last_3_day(result))
 
@@ -287,25 +296,32 @@ class GeneProg:
                 for column_idx in range(len(result[row_idx])):
                     if 4 < column_idx < 8:
                         for key_data in data.keys():
-                            if row_idx == 9 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ЖП", "").get("Всего ЖП", "")
-                            if row_idx == 10 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ЖП", "").get("Выполнено ЖП", "")
-                            if row_idx == 14 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ФОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 15 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ФОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 19 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ТОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 20 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ТОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 24 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ПОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 25 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("ПОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 29 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("СЗ", "").get("Итого", "")
-                            if row_idx == 30 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("СЗ", "").get("ФОЦ", "")
-                            if row_idx == 31 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("СЗ", "").get("ТОЦ", "")
-                            if row_idx == 32 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] =data[key_data].get("СЗ", "").get("ПОЦ", "")
-
-
-
+                            if row_idx == 9 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ЖП", "").get("Всего ЖП", "")
+                            if row_idx == 10 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ЖП", "").get("Выполнено ЖП", "")
+                            if row_idx == 14 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ФОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 15 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ФОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 19 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ТОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 20 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ТОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 24 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ПОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 25 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("ПОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 29 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("СЗ", "").get("Итого", "")
+                            if row_idx == 30 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("СЗ", "").get("ФОЦ", "")
+                            if row_idx == 31 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("СЗ", "").get("ТОЦ", "")
+                            if row_idx == 32 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
+                                data[key_data].get("СЗ", "").get("ПОЦ", "")
 
         return result
-
-
 
     def month_data_last_3_day(self, result):
         mounth_data1 = {
@@ -371,11 +387,11 @@ class GeneProg:
 
         return mounth_data_day
 
-if __name__ == "__main__":
-    app = GeneProg()
 
-    # app.config.set_ge_last_days("jdsjhaskdhsdhhjjshsj")
-    app.main()
-    # for i in app.main():
-    #     print(i)
-    # app.create_calendar()
+if __name__ == "__main__":
+    config = JsonConfig()
+
+    # ge_prog = GeneProg(mask_date="2025-10-12")
+    ge_prog = GeneProg()
+    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
+    excelPr.write_to_sheet(ge_prog.main(), "Общая информация")

@@ -1,4 +1,5 @@
 import argparse
+import calendar
 import ctypes
 import os
 import sys
@@ -82,8 +83,14 @@ class Main_gui:
         settings_menu = tk.Menu(tearoff=0)
         settings_menu.add_command(label="debug mode", command=self.gui_debug_mode)
 
+        """Подменю: Run"""
+        run_menu = tk.Menu(tearoff=0)
+        # run_menu.add_cascade(label="Открыть программу с консолью", command=self.console_create_in_program)
+        run_menu.add_cascade(label="Ручной запуск обновлений прошлого месяца",
+                             command=lambda: self.update_last_mouns(progress_barbar=True))
         """Основное меню"""
         main_menu.add_cascade(label="Settings", menu=settings_menu)
+        main_menu.add_cascade(label="Run", menu=run_menu)
         self.root.config(menu=main_menu)
 
         """
@@ -94,6 +101,7 @@ class Main_gui:
         self.brogressbar_value_var = IntVar(value=0)
 
         self.modification = IntVar(value=1)
+        self.time_and_day_now = str(dt.now())
         self.ubroutine_Jp_var = BooleanVar(value=True)
         self.ubroutine_Cz_var = BooleanVar(value=True)
         self.dop_date_Cz_var = BooleanVar(value=False)
@@ -102,6 +110,17 @@ class Main_gui:
         self.parent_label_column_jp_bool = False
         self.parent_label_column_cz_bool = False
         self.parent_label_column_BAM_bool = False
+        current_year = int(str(dt.now())[:4])
+        current_month = int(str(dt.now())[5:7])
+
+        if current_month == 1:
+            last_month_num = 12
+            last_year = current_year - 1
+        else:
+            last_month_num = current_month - 1
+            last_year = current_year
+        self.count_day_last_mounth = calendar.monthrange(last_year, last_month_num)[1]
+        self.last_mouns_last_day = f"{last_year}-{last_month_num}-{self.count_day_last_mounth}"
 
         """
         
@@ -120,12 +139,70 @@ class Main_gui:
         if not self.start_no_gui_var:
             self.create_gui()
 
-    def start_button_command(self):
-        if not self.start_no_gui_var:
+    def console_create_in_program(self):
+        self.args.console = True
+        self.create_gui()
+
+    def update_last_mouns(self, progress_barbar: bool = False):
+
+        if not self.start_no_gui_var and progress_barbar:
             self.brogressbar_value_var.set(0)
             self.progressbar.update()
             self.progresslabel_var.set("Работает...")
 
+        if self.ubroutine_Jp_var.get():
+            jp_prog = JpProgram.JpMain(mask_date=self.last_mouns_last_day)
+            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
+            excelPr.write_to_sheet(jp_prog.main(), "ЖП")
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
+
+        if self.ubroutine_Cz_var.get():
+            if self.dop_date_Cz_var.get():
+                cz_prog = CzMain(self.root, dop_date=1, mask_date=self.last_mouns_last_day)
+            else:
+                cz_prog = CzMain(self.root, mask_date=self.last_mouns_last_day)
+            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
+            excelPr.write_to_sheet(cz_prog.main(), "СЗ")
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
+
+        if self.ubroutine_Bam_var.get():
+            bam_prog = BamMain(mask_date=self.last_mouns_last_day)
+            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
+            excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
+            if not self.start_no_gui_var:
+                self.change_value_progress_bar_var(
+                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
+                            int(self.ubroutine_Bam_var.get())))
+        if not self.start_no_gui_var:
+            self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
+
+        if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
+            ge_prog = GeneProg(mask_date=self.last_mouns_last_day)
+            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
+            excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+
+        if not self.start_no_gui_var:
+            self.progresslabel_var.set("Программа завершена!")
+            self.progresslabel.update()
+
+        print("===================== Обработка старогго месяца завершена=====================================")
+        return
+
+    def start_button_command(self):
+        if int(self.time_and_day_now[8:10]) <= 5:
+            if messagebox.askyesno("Внимание", "Обновить данные за прошлый месяц?"):
+                self.update_last_mouns()
+
+        if not self.start_no_gui_var:
+            self.brogressbar_value_var.set(0)
+            self.progressbar.update()
+            self.progresslabel_var.set("Работает...")
 
         if self.ubroutine_Jp_var.get():
             jp_prog = JpProgram.JpMain()
@@ -434,6 +511,7 @@ class Main_gui:
         entry_date = Entry(setings_notebook, width=3)
         entry_date.place(x=180, y=50)
         entry_date.delete(0, END)
+
         entry_date.insert(0, self.config.getJPColumnName("Table of contents: List_date"))
 
         label_column = Label(setings_notebook, text="Настройка столбцов:")
@@ -852,17 +930,17 @@ class Main_gui:
         parser.add_argument("--pstart", action="store_true", help="Моментальный старт")
         parser.add_argument("--nog", action="store_true", help="Без граф. оболочки")
 
-        args = parser.parse_args()
+        self.args = parser.parse_args()
 
-        if args.cfile:
+        if self.args.cfile:
             CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".ReportConversionProgram")
             webbrowser.open(CONFIG_DIR)
             self.root.destroy()
             self.root.quit()
             return None
-        if args.pstart:
+        if self.args.pstart:
             self.start_button_var = True
-        if args.nog:
+        if self.args.nog:
             self.start_button_var = True
             self.start_no_gui_var = True
 
@@ -871,7 +949,7 @@ class Main_gui:
 
             self.start_button_command()
             return None
-        if args.console:
+        if self.args.console:
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
 

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta, datetime as dt
 from tkinter import messagebox
 
 import ExcelPrint
@@ -6,28 +6,7 @@ from JsonWork import JsonConfig
 from Search import SearchBam
 
 
-def get_dates(len_date: int, len_date_value: int = 3, year: bool = False):
-    """
-    Возвращает список из трех лет: позавчерашней, вчерашней и сегодняшней.
 
-    """
-    result_list = []
-    today = date.today()
-
-    for i in range(0, len_date):
-        if year:
-            date_form = today - timedelta(days=i * 365)
-        else:
-            date_form = today - timedelta(days=i)
-        if len_date_value == 1:
-            format_str = "%Y"
-        elif len_date_value == 2:
-            format_str = "%Y-%m"
-        else:
-            format_str = "%Y-%m-%d"
-        result_list.append(date.strftime(date_form, format_str))
-
-    return result_list
 
 
 def date_ref(date_n, len_date_value: int = 3, varibel: int = 0):
@@ -47,13 +26,13 @@ def date_ref(date_n, len_date_value: int = 3, varibel: int = 0):
             format_str = "%Y-%m-%d"
 
     try:
-        return date.strftime(date_n, format_str)
+        return dt.strftime(date_n, format_str)
     except:
         pass
 
 
 class BamMain:
-    def __init__(self):
+    def __init__(self,mask_date:str = str(dt.now())):
         self.config = JsonConfig()
 
         self.listes_excel = self.config.getBAMColumnName( "Table of contents: listes_excel", intOrlist=1)
@@ -61,14 +40,38 @@ class BamMain:
 
         self.search = None
         self.listes_excel_last = ""
+        self.mask_date = mask_date
 
         self.error_masage_var = False
+
+    def get_dates(self, len_date: int, len_date_value: int = 3, year: bool = False):
+        """
+        Возвращает список из трех лет: позавчерашней, вчерашней и сегодняшней.
+
+        """
+        result_list = []
+        today = dt.strptime(self.mask_date[:10], '%Y-%m-%d')
+
+        for i in range(0, len_date):
+            if year:
+                date_form = today - timedelta(days=i * 365)
+            else:
+                date_form = today - timedelta(days=i)
+            if len_date_value == 1:
+                format_str = "%Y"
+            elif len_date_value == 2:
+                format_str = "%Y-%m"
+            else:
+                format_str = "%Y-%m-%d"
+            result_list.append(dt.strftime(date_form, format_str))
+
+        return result_list
 
     def headers_sort(self, headers):
         headers.sort()
         headers.remove("")
         result = []
-        date_years = get_dates(int(self.config.getBAMColumnName("Table of contents: List_date")))
+        date_years = self.get_dates(int(self.config.getBAMColumnName("Table of contents: List_date")))
         for year_date in headers:
             if year_date in date_years:
                 result.append(year_date)
@@ -165,6 +168,6 @@ class BamMain:
 if __name__ == '__main__':
     run = BamMain()
     config = JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
+    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="BAM")
 
     excelPr.write_to_sheet(run.main(), "Бам по УП")
