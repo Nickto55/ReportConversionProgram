@@ -46,7 +46,7 @@ def resource_path(relative_path):
 class Main_gui:
     def __init__(self, root):
         """
-        Создаёт главное окно приложения
+        Создаёт главное ок  но приложения
         :param root: окно
         """
 
