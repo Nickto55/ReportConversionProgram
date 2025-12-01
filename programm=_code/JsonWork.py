@@ -32,9 +32,8 @@ class JsonConfig:
                 self.setCzFilePathAndName()
             if not os.path.exists((self.getBAMPathFile_input())):
                 self.setBAMFilePathAndName()
-        except Exception as e:
+        except:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
-            print("Произошла ошибка при проверке наличия файлов",e)
 
         try:
             if self.getConfigVersionConfig() < float(
@@ -42,9 +41,8 @@ class JsonConfig:
                 messagebox.showwarning("Внимание",
                                        "Версия файла конфига ниже чем версия программы, конфиг может быть не совместим")
                 return
-        except Exception as e:
+        except:
             messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг не совместим")
-            print("Версия файла конфига ниже чем версия программы, конфиг не совместим",e)
             return
 
     def save(self):
@@ -371,3 +369,5 @@ class JsonConfig:
 
 if __name__ == "__main__":
     run = JsonConfig()
+    # print("{",run.getJPPathFile_output(),"}")
+    # print("{",run.getJPPathFile_input(),"}")

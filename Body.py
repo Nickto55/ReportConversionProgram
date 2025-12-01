@@ -415,12 +415,10 @@ class Main_gui:
                 self.parent_label_column_jp_bool = True
                 self.parent_label_column_jp.title("Изменение столбцов")
                 self.parent_label_column_jp.geometry("300x197")
-                self.parent_label_column_jp.protocol("WM_DELETE_WINDOW", lambda: dismiss(
-                ))  # перехватываем нажатие на крестик
+                self.parent_label_column_jp.protocol("WM_DELETE_WINDOW", lambda: dismiss())
                 self.parent_label_column_jp.wm_attributes("-topmost", True)
 
                 frame = Frame(self.parent_label_column_jp)
-                # noinspection PyTypeChecker
                 frame.pack(fill=BOTH)
 
                 label_Date = Label(frame, text=f'Дата: ')
