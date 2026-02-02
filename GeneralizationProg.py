@@ -54,7 +54,7 @@ class GeneProg:
         for i in range(4): result.append(self.row_static.copy())
         date_str = self.mask_date[:10]
         current_year = int(date_str[:4])
-        current_month = int(date_str[5:7])
+        current_month = int(str(date_str[5:7]).replace("-",""))
 
         if current_month == 1:
             last_month_num = 12
@@ -193,7 +193,8 @@ class GeneProg:
                 for r_idx, row in enumerate(self.data_jp, 1):
                     for value in self.data_jp[row]:
                         if r_idx == 2:
-                            if int(self.mask_date[5:7]) == self.now_month and cdsount == 1:
+
+                            if int(self.mask_date[5:7].replace("-","")) == self.now_month and cdsount == 1:
                                 result[row_idx][column_idx] = self.data_jp[0].get(column_name_data, "")
                                 break
                             else:
@@ -274,7 +275,7 @@ class GeneProg:
         result[-1].append("V2.01.color")
 
         if not self.data_ge is None:
-            if int(str(list(self.data_ge.get(0).keys())[0])[5:7]) == int(self.mask_date[5:7]):
+            if int(str(list(self.data_ge.get(0).keys())[0])[5:7].replace("-","")) == int(self.mask_date[5:7].replace("-","")):
                 for r_idx, row in enumerate(self.data_ge):
                     for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
                         if len(result) > r_idx:
@@ -393,5 +394,4 @@ if __name__ == "__main__":
 
     # ge_prog = GeneProg(mask_date="2025-10-12")
     ge_prog = GeneProg()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
-    excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+    print(ge_prog.create_calendar())
