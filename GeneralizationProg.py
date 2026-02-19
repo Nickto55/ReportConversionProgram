@@ -9,6 +9,7 @@ import pandas as pd
 import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchGe
+from log_utils import logger, attempt_recover
 
 
 class GeneProg:
@@ -40,7 +41,21 @@ class GeneProg:
         self.get_datas_excel()
 
     def get_datas_excel(self, start_row=1, start_col=1):
-        self.data_jp, self.data_cz, self.data_bam, self.data_ge = self.search_in_sheet.sheet_name_list()
+        def _do():
+            return self.search_in_sheet.sheet_name_list()
+
+        def _reload_search_in_sheet():
+            try:
+                self.search_in_sheet = SearchGe()
+                logger.info("Reinitialized SearchGe during recovery")
+            except Exception:
+                logger.exception("Failed to reinitialize SearchGe")
+
+        try:
+            self.data_jp, self.data_cz, self.data_bam, self.data_ge = attempt_recover(_do, recover_funcs=[_reload_search_in_sheet], attempts=2)
+        except Exception:
+            logger.exception("get_datas_excel failed; setting empty data structures")
+            self.data_jp, self.data_cz, self.data_bam, self.data_ge = {}, {}, {}, {}
 
     def create_calendar(self):
         """Создание календаря, для таблицы"""

@@ -4,6 +4,7 @@ from tkinter import messagebox
 import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchBam
+from log_utils import logger, attempt_recover
 
 
 
@@ -83,71 +84,90 @@ class BamMain:
         return headers
 
     def result_creation_function(self, listes_excel):
+        # Основная логика вынесена в замыкание, чтобы можно было повторить попытку после восстановления
+        def _process():
+            self.search = SearchBam(listes_excel)
+            self.data = self.search.get_dict_all_data()
 
-        self.search = SearchBam(listes_excel)
-        self.data = self.search.get_dict_all_data()
-
-        self.headers = self.headers_sort(self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
-        result = []
-        result_row = []
-        for row in self.data.values():
-            for i in row.keys():
-                result_row.append(i)
-            break
-        result_row.append("/::/")
-        result.append(result_row)
-        i_sort_last = ""
-        try:
-            i_sort_last = self.headers[-1]
-        except:
-            if not self.error_masage_var:
-                messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
-                self.error_masage_var = True
-                return ["ПУСТО"]
-
-
-        row_for_count = 0
-        row_count = 1
-        count_dse = 0
-        count_up = 0
-        count_dse2 = 0
-        count_up2 = 0
-
-        for i_sort in self.headers:
-            if i_sort_last != i_sort or self.listes_excel_last != listes_excel:
-                if self.listes_excel_last != listes_excel:
-                    self.listes_excel_last = listes_excel
-                result.append(["/../","","","","","","","",""])
-                row_count += 1
-                row_for_count = row_count-1
+            self.headers = self.headers_sort(self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
+            result = []
+            result_row = []
             for row in self.data.values():
+                for i in row.keys():
+                    result_row.append(i)
+                break
+            result_row.append("/::/")
+            result.append(result_row)
+            i_sort_last = ""
+            try:
+                i_sort_last = self.headers[-1]
+            except Exception:
+                if not self.error_masage_var:
+                    messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
+                    self.error_masage_var = True
+                    return ["ПУСТО"]
 
-                try:
-                    date_row = date_ref(row.get(self.config.getBAMColumnName("Table of contents: Date"), ""))
-                except:
-                    date_row = row.get(self.config.getBAMColumnName("Table of contents: Date"), "")
+            row_for_count = 0
+            row_count = 1
+            count_dse = 0
+            count_up = 0
+            count_dse2 = 0
+            count_up2 = 0
 
-                if date_row == i_sort and date_row != "":
+            for i_sort in self.headers:
+                if i_sort_last != i_sort or self.listes_excel_last != listes_excel:
+                    if self.listes_excel_last != listes_excel:
+                        self.listes_excel_last = listes_excel
+                    result.append(["/../","","","","","","","",""])
                     row_count += 1
-                    row[self.config.getBAMColumnName("Table of contents: Date")] = date_ref(
-                        row.get(self.config.getBAMColumnName("Table of contents: Date"), ""), varibel=1)
-                    row = list(row.values())[1:]
-                    if not pd.isna(row[5]) and int(row[5]) != 0:
-                        count_up += row[5]
-                        count_dse += 1
-                        count_up += row[5]
-                        count_dse +=1
-                    row.insert(0, "")
-                    result.append(row)
-            i_sort_last = i_sort
-            result[row_for_count].insert(3,  count_dse-count_dse2)
-            result[row_for_count].insert(6,  count_up-count_up2)
-            result[row_for_count].append(result[row_for_count+1][7])
-            count_dse2 = count_dse
+                    row_for_count = row_count-1
+                for row in self.data.values():
 
-            count_up2 = count_up
+                    try:
+                        date_row = date_ref(row.get(self.config.getBAMColumnName("Table of contents: Date"), ""))
+                    except Exception:
+                        date_row = row.get(self.config.getBAMColumnName("Table of contents: Date"), "")
 
-        return result
+                    if date_row == i_sort and date_row != "":
+                        row_count += 1
+                        row[self.config.getBAMColumnName("Table of contents: Date")] = date_ref(
+                            row.get(self.config.getBAMColumnName("Table of contents: Date"), ""), varibel=1)
+                        row = list(row.values())[1:]
+                        try:
+                            if not pd.isna(row[5]) and int(row[5]) != 0:
+                                count_up += int(row[5])
+                                count_dse += 1
+                        except Exception:
+                            logger.exception("Failed to parse UP value: %s", row[5] if len(row) > 5 else None)
+                        row.insert(0, "")
+                        result.append(row)
+                i_sort_last = i_sort
+                # Вставляем подсчёты
+                try:
+                    result[row_for_count].insert(3,  count_dse-count_dse2)
+                    result[row_for_count].insert(6,  count_up-count_up2)
+                    result[row_for_count].append(result[row_for_count+1][7])
+                except Exception:
+                    logger.exception("Failed to write summary row at index %s", row_for_count)
+                count_dse2 = count_dse
+                count_up2 = count_up
+
+            return result
+
+        # Функция восстановления: переинициализировать поиск и данные
+        def _reload_search():
+            try:
+                self.search = SearchBam(listes_excel)
+                self.data = self.search.get_dict_all_data()
+                logger.info("Reloaded SearchBam during recovery for %s", listes_excel)
+            except Exception:
+                logger.exception("Reloading SearchBam failed for %s", listes_excel)
+
+        try:
+            return attempt_recover(_process, recover_funcs=[_reload_search], attempts=2)
+        except Exception:
+            logger.exception("result_creation_function failed for %s", listes_excel)
+            return []
 
     def main(self):
         """Главное тело"""

@@ -294,38 +294,98 @@ class Main_gui:
         :return: None, если есть всё, или возвращения имяни не хватающего ключа
         """
         recovery_data_inputs = {"Program:": [], "ЖП": [], "СЗ": [], "BAM": [], "Ge": []}
-        data = self.config.getData()
+        data = {}
+
+        # Попытка безопасно загрузить конфиг с логированием и восстановлением
+        def _load_config_data():
+            return self.config.getData()
+
+        def _reload_config():
+            try:
+                self.config = JsonWork.JsonConfig()
+                logger.info("JsonConfig reinitialized during checking_data_inputs recovery")
+            except Exception:
+                logger.exception("Failed to reinitialize JsonConfig during recovery")
+
+        try:
+            data = attempt_recover(_load_config_data, recover_funcs=[_reload_config], attempts=2)
+        except Exception:
+            logger.exception("checking_data_inputs: cannot load config data; proceeding with empty data")
+            data = {}
         """
         Проверка наличия всех ключей, глубина = 2
         """
-        lose_key_list = Config.configProgram.keys() - data.keys()
+        try:
+            lose_key_list = Config.configProgram.keys() - data.keys()
+        except Exception:
+            logger.exception("Failed to determine missing top-level config keys")
+            lose_key_list = Config.configProgram.keys()
+
         if len(lose_key_list) != 0:
-            messagebox.showerror("Ошибка",
-                                 "Структура файла конфига нарушена, или значительно обновлена в последнем обнавлении\nУдалите текущий файл конфига")
-        for local_key in data.keys():
-            local_lose_key_list = Config.configProgram[local_key].keys() - data[local_key].keys()
-            if len(local_lose_key_list) != 0:
-                if messagebox.askyesno("внимане", "Вайл конфига был изменён, хотите внести возможные изменения?"):
-                    for i in local_lose_key_list:
-                        print("Измменены ключи:", i)
-                        self.config.recoveryLoseKeyAndValue(local_key, i, Config.configProgram[local_key].get(i, ""))
+            logger.warning("Config structure mismatch, missing keys: %s", lose_key_list)
+            try:
+                messagebox.showerror("Ошибка",
+                                     "Структура файла конфига нарушена, или значительно обновлена в последнем обнавлении\nУдалите текущий файл конфига")
+            except Exception:
+                logger.exception("Failed to show messagebox for config structure error")
+
+        for local_key in list(data.keys()):
+            try:
+                local_lose_key_list = Config.configProgram[local_key].keys() - data[local_key].keys()
+                if len(local_lose_key_list) != 0:
+                    try:
+                        ask = messagebox.askyesno("внимане", "Вайл конфига был изменён, хотите внести возможные изменения?")
+                    except Exception:
+                        logger.exception("Failed to show messagebox when local keys changed")
+                        ask = False
+                    if ask:
+                        for i in local_lose_key_list:
+                            logger.info("Recovering missing key %s in section %s", i, local_key)
+                            try:
+                                self.config.recoveryLoseKeyAndValue(local_key, i, Config.configProgram[local_key].get(i, ""))
+                            except Exception:
+                                logger.exception("recoveryLoseKeyAndValue failed for %s/%s", local_key, i)
+            except Exception:
+                logger.exception("Error while checking local config keys for %s", local_key)
 
         """
         Проверка всех значений
         """
 
-        for key_program in data.keys():
-            for key_value in data[key_program].keys():
-                value_config = data[key_program].get(key_value, "")
-                if key_value in Config.keys_for_unnecessary_data[key_program]:
-                    if value_config == "" or value_config == []:
-                        if key_program == "Program:":
-                            self.config.recoveryLoseKeyAndValue(key_program, key_value,
-                                                                Config.configProgram[key_program].get(key_value, ""))
-                        else:
-                            self.availability_of_required_data = False
-                            recovery_data_inputs[key_program].append(key_value)
-        self.recovery_data_inputs(recovery_data_inputs)
+        for key_program in list(data.keys()):
+            try:
+                for key_value in data[key_program].keys():
+                    value_config = data[key_program].get(key_value, "")
+                    if key_value in Config.keys_for_unnecessary_data.get(key_program, []):
+                        if value_config == "" or value_config == []:
+                            if key_program == "Program:":
+                                try:
+                                    self.config.recoveryLoseKeyAndValue(key_program, key_value,
+                                                                        Config.configProgram[key_program].get(key_value, ""))
+                                except Exception:
+                                    logger.exception("Failed to recover Program: %s", key_value)
+                            else:
+                                self.availability_of_required_data = False
+                                recovery_data_inputs.setdefault(key_program, []).append(key_value)
+            except Exception:
+                logger.exception("Error while checking values in config section %s", key_program)
+
+        # Попытка автоматической перестройки/восстановления, если есть недостающие значения
+        try:
+            if any(recovery_data_inputs.values()):
+                logger.info("Attempting automatic recovery for missing config values: %s", recovery_data_inputs)
+                try:
+                    self.recovery_data_inputs(recovery_data_inputs)
+                except Exception:
+                    logger.exception("Automatic recovery (recovery_data_inputs) failed")
+        except Exception:
+            logger.exception("Unexpected error during automatic recovery processing")
+
+        # Всегда вызываем recovery_data_inputs, как было раньше
+        try:
+            self.recovery_data_inputs(recovery_data_inputs)
+        except Exception:
+            logger.exception("Final call to recovery_data_inputs failed")
 
     def setings_jp_notebook(self, setings_notebook):
         def button_puth_command():

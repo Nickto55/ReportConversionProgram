@@ -11,6 +11,7 @@ import plyer
 import ExcelPrint
 import JsonWork
 import Search
+from log_utils import logger, attempt_recover
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -40,9 +41,24 @@ class CzMain:
 
         self.dop_date = dop_date
 
-        self.search = Search.SearchCz()
-        self.data = self.search.get_dict_all_data()
-        self.hearders: list = self.search.get_headers()
+        def _init_search():
+            s = Search.SearchCz()
+            return s, s.get_dict_all_data(), s.get_headers()
+
+        def _reload_search():
+            try:
+                self.search = Search.SearchCz()
+                logger.info("Reinitialized SearchCz during recovery in CzMain.__init__")
+            except Exception:
+                logger.exception("Failed to reinitialize SearchCz during recovery in CzMain.__init__")
+
+        try:
+            self.search, self.data, self.hearders = attempt_recover(_init_search, recover_funcs=[_reload_search], attempts=2)
+        except Exception:
+            logger.exception("CzMain: failed to initialize search/data/headers; using empty defaults")
+            self.search = None
+            self.data = {}
+            self.hearders = []
         self.columns = []
         self.accepted_no_repit = None
         self.accepted_chuse_user = accepted_chuse_user

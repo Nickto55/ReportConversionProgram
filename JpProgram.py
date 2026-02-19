@@ -8,6 +8,7 @@ import plyer
 import ExcelPrint
 import JsonWork
 import Search
+from log_utils import logger, attempt_recover
 
 
 
@@ -27,11 +28,24 @@ class JpMain:
     def __init__(self, count_prog = None, root = None, mask_date:str = str(dt.now())):
         self.config = JsonWork.JsonConfig()
         self.root = root
+        def _init_search():
+            s = Search.SearchJP()
+            return s, s.get_dict_all_data()
 
+        def _reload_search():
+            try:
+                self.search = Search.SearchJP()
+                logger.info("Reinitialized SearchJP during recovery in JpMain.__init__")
+            except Exception:
+                logger.exception("Failed to reinitialize SearchJP during recovery in JpMain.__init__")
 
-
-        search = Search.SearchJP()
-        self.data = search.get_dict_all_data()
+        try:
+            search, self.data = attempt_recover(_init_search, recover_funcs=[_reload_search], attempts=2)
+            self.search = search
+        except Exception:
+            logger.exception("JpMain: failed to initialize search/data; using empty defaults")
+            self.search = None
+            self.data = {}
         self.mask_date = mask_date
 
     # Получаем список дат
