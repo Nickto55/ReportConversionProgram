@@ -121,6 +121,7 @@ class BamMain:
                 row_count += 1
                 row_for_count = row_count-1
             for row in self.data.values():
+
                 try:
                     date_row = date_ref(row.get(self.config.getBAMColumnName("Table of contents: Date"), ""))
                 except:
@@ -131,7 +132,9 @@ class BamMain:
                     row[self.config.getBAMColumnName("Table of contents: Date")] = date_ref(
                         row.get(self.config.getBAMColumnName("Table of contents: Date"), ""), varibel=1)
                     row = list(row.values())[1:]
-                    if int(row[5]) != 0:
+                    if not pd.isna(row[5]) and int(row[5]) != 0:
+                        count_up += row[5]
+                        count_dse += 1
                         count_up += row[5]
                         count_dse +=1
                     row.insert(0, "")
