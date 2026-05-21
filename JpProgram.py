@@ -184,7 +184,9 @@ class JpMain:
                    self.config.getJPColumnName("Table of contents: DCE"),
                    self.config.getJPColumnName("Table of contents: Name"),
                    self.config.getJPColumnName("Table of contents: Translation"),
-                   self.config.getJPColumnName("Table of contents: Question accepted Full name")]
+                   self.config.getJPColumnName("Table of contents: Question accepted Full name"),
+                   self.config.getJPColumnName("Table of contents: qwetion"),
+                   ]
                   ]
 
         pos_removed = 0
@@ -192,6 +194,7 @@ class JpMain:
         pos_date = 0
         pos_dce = 0
         pos_name = 0
+        pos_qwetion = 0
         pos_accepted_name = 0
         pos_Translation = 0
 
@@ -216,9 +219,13 @@ class JpMain:
                     "Table of contents: Translation"):
                 pos_Translation = i
 
-            if self.data.get(0, "").get(i, "") == self.config.getJPColumnName(
-                    "Table of contents: Question accepted Full name"):
+            if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: Question accepted Full name"):
                 pos_accepted_name = i
+
+            if self.data.get(0, "").get(i, "") == self.config.getJPColumnName("Table of contents: qwetion"):
+                pos_qwetion = i
+
+
 
         if pos_number == 0 or pos_date == 0 or pos_dce == 0 or pos_name == 0 or pos_accepted_name == 0 or pos_removed == 0 or pos_Translation == 0:
             return None
@@ -233,7 +240,8 @@ class JpMain:
                         data.get(pos_dce, ""),
                         data.get(pos_name, ""),
                         data.get(pos_Translation, ""),
-                        data.get(pos_accepted_name, "")
+                        data.get(pos_accepted_name, ""),
+                        data.get(pos_qwetion, "")
                     ]
                 )
         # for i in result:

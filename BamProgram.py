@@ -1,6 +1,8 @@
 from datetime import timedelta, datetime as dt
 from tkinter import messagebox
 
+import pandas as pd
+
 import ExcelPrint
 from JsonWork import JsonConfig
 from Search import SearchBam

@@ -26,6 +26,7 @@ configProgram = {
         "Table of contents: Namber": "номер ",
         "Table of contents: Name": "Наименов.",
         "Table of contents: Translation": "Перевод",
+        "Table of contents: qwetion": "Описание вопроса ",
 
         "Table of contents: List_date": 4
     },

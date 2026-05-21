@@ -7,8 +7,9 @@ import tkinter as tk
 import webbrowser
 from datetime import datetime as dt
 from tkinter import *
-from tkinter import ttk, messagebox, BOTH, filedialog
+from tkinter import ttk, messagebox, BOTH, filedialog, END
 from tkinter.ttk import Progressbar
+from log_utils import logger, attempt_recover
 
 import plyer
 
@@ -135,6 +136,7 @@ class Main_gui:
             self.root.iconbitmap(icon_path)
         except Exception as e:
             print(f"Не удалось установить иконку: {e}")
+
         self.checking_data_inputs()
         if not self.start_no_gui_var:
             self.create_gui()
@@ -191,7 +193,7 @@ class Main_gui:
             self.progresslabel_var.set("Программа завершена!")
             self.progresslabel.update()
 
-        print("===================== Обработка старогго месяца завершена=====================================")
+        print("===================== Обработка старого месяца завершена=====================================")
         return
 
     def start_button_command(self):
