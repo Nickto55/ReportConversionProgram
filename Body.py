@@ -125,14 +125,11 @@ class Main_gui:
 
         """
         
-        
-        
-        
         Вызовы функций
         
         """
         try:
-            icon_path = resource_path("iconca.ico")
+            icon_path = resource_path("new_icon_report-conversion-program.ico")
             self.root.iconbitmap(icon_path)
         except Exception as e:
             print(f"Не удалось установить иконку: {e}")
