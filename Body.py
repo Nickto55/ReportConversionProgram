@@ -9,7 +9,6 @@ from datetime import datetime as dt
 from tkinter import *
 from tkinter import ttk, messagebox, BOTH, filedialog, END
 from tkinter.ttk import Progressbar
-from log_utils import logger, attempt_recover
 
 import plyer
 
@@ -20,6 +19,7 @@ import JsonWork
 from BamProgram import BamMain
 from CzProgram import CzMain
 from GeneralizationProg import GeneProg
+from log_utils import logger, attempt_recover
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -190,7 +190,6 @@ class Main_gui:
             self.progresslabel_var.set("Программа завершена!")
             self.progresslabel.update()
 
-        print("===================== Обработка старого месяца завершена=====================================")
         return
 
     def start_button_command(self):
@@ -333,7 +332,8 @@ class Main_gui:
                 local_lose_key_list = Config.configProgram[local_key].keys() - data[local_key].keys()
                 if len(local_lose_key_list) != 0:
                     try:
-                        ask = messagebox.askyesno("внимане", "Вайл конфига был изменён, хотите внести возможные изменения?")
+                        ask = messagebox.askyesno("внимане",
+                                                  "Вайл конфига был изменён, хотите внести возможные изменения?")
                     except Exception:
                         logger.exception("Failed to show messagebox when local keys changed")
                         ask = False
@@ -341,7 +341,8 @@ class Main_gui:
                         for i in local_lose_key_list:
                             logger.info("Recovering missing key %s in section %s", i, local_key)
                             try:
-                                self.config.recoveryLoseKeyAndValue(local_key, i, Config.configProgram[local_key].get(i, ""))
+                                self.config.recoveryLoseKeyAndValue(local_key, i,
+                                                                    Config.configProgram[local_key].get(i, ""))
                             except Exception:
                                 logger.exception("recoveryLoseKeyAndValue failed for %s/%s", local_key, i)
             except Exception:
@@ -360,7 +361,8 @@ class Main_gui:
                             if key_program == "Program:":
                                 try:
                                     self.config.recoveryLoseKeyAndValue(key_program, key_value,
-                                                                        Config.configProgram[key_program].get(key_value, ""))
+                                                                        Config.configProgram[key_program].get(key_value,
+                                                                                                              ""))
                                 except Exception:
                                     logger.exception("Failed to recover Program: %s", key_value)
                             else:
@@ -1193,9 +1195,12 @@ class Main_gui:
         listmod = [1, 5, 10, 50, 100]
 
         for i in range(len(listmod)):
-            Radiobutton(frame_right, value=listmod[i], text=listmod[i], variable=self.modification).grid(row=i,
-                                                                                                         column=0,
-                                                                                                         sticky="w")
+            Radiobutton(
+                frame_right,
+                value=listmod[i],
+                text=listmod[i],
+                variable=self.modification
+            ).grid(row=i, column=0, sticky="w")
 
         return size_set
 
