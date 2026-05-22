@@ -14,14 +14,14 @@ import plyer
 
 import static.config as Config
 import scripts.excel_enter as excel_enter
-import scripts.handling_json as handling_json
+import scripts.handlings.handling_json as handling_json
 
 from programm.program_jp import JpMain
 from programm.program_bam import BamMain
 from programm.program_cz import CzMain
 from programm.program_generalization import GeneProg
 
-from scripts.handling_log import logger, attempt_recover
+from scripts.handlings.handling_log import logger, attempt_recover
 
 
 def send_notification(title, message, settime=15, file_path=""):

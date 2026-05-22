@@ -4,9 +4,9 @@ from tkinter import messagebox
 import pandas as pd
 
 import scripts.excel_enter as excel_enter
-from scripts.handling_json import JsonConfig
-from scripts.handling_data import SearchBam
-from scripts.handling_log import logger, attempt_recover
+from scripts.handlings.handling_json import JsonConfig
+from scripts.handlings.handling_data import SearchBam
+from scripts.handlings.handling_log import logger, attempt_recover
 
 
 

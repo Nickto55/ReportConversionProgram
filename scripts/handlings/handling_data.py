@@ -2,7 +2,7 @@ from tkinter import messagebox
 
 import pandas as pd
 
-import scripts.handling_json as handling_json
+import scripts.handlings.handling_json as handling_json
 
 
 class SearchBam:

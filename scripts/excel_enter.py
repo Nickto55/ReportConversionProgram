@@ -7,7 +7,7 @@ from openpyxl.styles import PatternFill, Font
 from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
 
-import scripts.handling_json as handling_json
+import scripts.handlings.handling_json as handling_json
 
 
 def auto_fit_columns(sheet):

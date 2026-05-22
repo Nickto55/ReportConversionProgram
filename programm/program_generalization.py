@@ -6,9 +6,9 @@ from datetime import datetime as dt
 
 import pandas as pd
 
-from scripts.handling_json import JsonConfig
-from scripts.handling_data import SearchGe
-from scripts.handling_log import logger, attempt_recover
+from scripts.handlings.handling_json import JsonConfig
+from scripts.handlings.handling_data import SearchGe
+from scripts.handlings.handling_log import logger, attempt_recover
 
 
 class GeneProg:
