@@ -6,9 +6,9 @@ from datetime import datetime as dt
 
 import pandas as pd
 
-import ExcelPrint
-from JsonWork import JsonConfig
-from Search import SearchGe
+from scripts.handling_json import JsonConfig
+from scripts.handling_data import SearchGe
+from scripts.handling_log import logger, attempt_recover
 
 
 class GeneProg:
@@ -40,7 +40,22 @@ class GeneProg:
         self.get_datas_excel()
 
     def get_datas_excel(self, start_row=1, start_col=1):
-        self.data_jp, self.data_cz, self.data_bam, self.data_ge = self.search_in_sheet.sheet_name_list()
+        def _do():
+            return self.search_in_sheet.sheet_name_list()
+
+        def _reload_search_in_sheet():
+            try:
+                self.search_in_sheet = SearchGe()
+                logger.info("Reinitialized SearchGe during recovery")
+            except Exception:
+                logger.exception("Failed to reinitialize SearchGe")
+
+        try:
+            self.data_jp, self.data_cz, self.data_bam, self.data_ge = attempt_recover(_do, recover_funcs=[
+                _reload_search_in_sheet], attempts=2)
+        except Exception:
+            logger.exception("get_datas_excel failed; setting empty data structures")
+            self.data_jp, self.data_cz, self.data_bam, self.data_ge = {}, {}, {}, {}
 
     def create_calendar(self):
         """Создание календаря, для таблицы"""
@@ -54,7 +69,7 @@ class GeneProg:
         for i in range(4): result.append(self.row_static.copy())
         date_str = self.mask_date[:10]
         current_year = int(date_str[:4])
-        current_month = int(date_str[5:7])
+        current_month = int(str(date_str[5:7]).replace("-", ""))
 
         if current_month == 1:
             last_month_num = 12
@@ -138,6 +153,7 @@ class GeneProg:
         return result
 
     def filling_data(self, result):
+
         for row_idx in range(len(result)):
             if row_idx < 8: continue
             for column_idx in range(len(result[row_idx])):
@@ -145,7 +161,7 @@ class GeneProg:
                 if column_idx < len(result[5]):
 
                     if row_idx == 9: self.jp_row_value_now(result, column_idx, row_idx)
-                    if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Переводов")
+                    if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Вып. Задач")
 
                     if row_idx == 14: self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
                     if row_idx == 15: self.bam_row_value_now(result, row_idx, column_idx, 1, self.foc_date_list)
@@ -193,16 +209,22 @@ class GeneProg:
                 for r_idx, row in enumerate(self.data_jp, 1):
                     for value in self.data_jp[row]:
                         if r_idx == 2:
-                            if int(self.mask_date[5:7]) == self.now_month and cdsount == 1:
+                            if int(self.mask_date[5:7].replace("-", "")) == self.now_month and cdsount == 1:
                                 result[row_idx][column_idx] = self.data_jp[0].get(column_name_data, "")
                                 break
                             else:
                                 cdsount = 1
 
+        if column_name_data == "Вып. Задач":
+            for row_jp_num, row_jp in self.data_jp.items():
+                if row_jp_num > 3 and pd.isna(row_jp.get('Unnamed: 0', '')) and not pd.isna(row_jp.get('Задач', '')):
+                    if row_jp.get('Задач', '')[5:7] == str(dt.strptime(self.mask_date[:10], '%Y-%m-%d'))[5:7]:
+                        result[10][int(row_jp.get('Задач', '')[8:10]) + 7] = row_jp.get('Переводов', '')
+
     def main(self):
         result = self.create_calendar()
 
-        self.chapter_gen(result, "ЖП", "Всего ЖП", "Выполнено ЖП")
+        self.chapter_gen(result, "ЖП", "Всего ЖП", "Вып. Задач")
         self.chapter_gen(result, "ФОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
         self.chapter_gen(result, "ТОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
         self.chapter_gen(result, "ПОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
@@ -274,7 +296,8 @@ class GeneProg:
         result[-1].append("V2.01.color")
 
         if not self.data_ge is None:
-            if int(str(list(self.data_ge.get(0).keys())[0])[5:7]) == int(self.mask_date[5:7]):
+            if int(str(list(self.data_ge.get(0).keys())[0])[5:7].replace("-", "")) == int(
+                    self.mask_date[5:7].replace("-", "")):
                 for r_idx, row in enumerate(self.data_ge):
                     for c_idx, value in enumerate(self.data_ge.get(r_idx, "")):
                         if len(result) > r_idx:
@@ -393,5 +416,4 @@ if __name__ == "__main__":
 
     # ge_prog = GeneProg(mask_date="2025-10-12")
     ge_prog = GeneProg()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Ge")
-    excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+    print(ge_prog.main()[10])

@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 from tkinter import messagebox, filedialog
 
-import Config
+import static.config as Config
 
 
 def updateInfoConfig(fileOrDir: int):

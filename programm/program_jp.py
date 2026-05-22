@@ -5,10 +5,10 @@ import pandas as pd
 import plyer
 
 
-import ExcelPrint
-import JsonWork
-import Search
-from log_utils import logger, attempt_recover
+import scripts.excel_enter as excel_enter
+import scripts.handling_json as handling_json
+import scripts.handling_data as handling_data
+from scripts.handling_log import logger, attempt_recover
 
 
 
@@ -26,15 +26,15 @@ def send_notification(title, message, settime=15, file_path=""):
 
 class JpMain:
     def __init__(self, count_prog = None, root = None, mask_date:str = str(dt.now())):
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
         self.root = root
         def _init_search():
-            s = Search.SearchJP()
+            s = handling_data.SearchJP()
             return s, s.get_dict_all_data()
 
         def _reload_search():
             try:
-                self.search = Search.SearchJP()
+                self.search = handling_data.SearchJP()
                 logger.info("Reinitialized SearchJP during recovery in JpMain.__init__")
             except Exception:
                 logger.exception("Failed to reinitialize SearchJP during recovery in JpMain.__init__")
@@ -336,8 +336,8 @@ class JpMain:
 
 if __name__ == "__main__":
     run = JpMain()
-    config = JsonWork.JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output())
+    config = handling_json.JsonConfig()
+    excelPr = excel_enter.ExcelWriter(config.getJPPathFile_output())
 
     excelPr.write_to_sheet(run.main(), "ЖП")
     # send_notification("Программа завершена", "Программа завершена, проверте файл",16)

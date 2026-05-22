@@ -12,18 +12,20 @@ from tkinter.ttk import Progressbar
 
 import plyer
 
-import Config
-import ExcelPrint
-import JpProgram
-import JsonWork
-from BamProgram import BamMain
-from CzProgram import CzMain
-from GeneralizationProg import GeneProg
-from log_utils import logger, attempt_recover
+import static.config as Config
+import scripts.excel_enter as excel_enter
+import scripts.handling_json as handling_json
+
+from programm.program_jp import JpMain
+from programm.program_bam import BamMain
+from programm.program_cz import CzMain
+from programm.program_generalization import GeneProg
+
+from scripts.handling_log import logger, attempt_recover
 
 
 def send_notification(title, message, settime=15, file_path=""):
-    plyer.notification.notify(title=title, message=message, app_name="Good Morning (JP)", timeout=settime)
+    plyer.notification.notify(title=title, message=message, app_name="Good Morning (JP)", timeout=settime, app_icon=resource_path("static/icons/new_icon_report-conversion-program.ico"))
 
 
 def updateInfoConfig(fileOrDir: int):
@@ -54,7 +56,7 @@ class Main_gui:
         self.start_no_gui_var = False
         self.start_button_var = False
         self.progresslabel_var = StringVar(value="...")
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
 
         """
         
@@ -129,7 +131,7 @@ class Main_gui:
         
         """
         try:
-            icon_path = resource_path("new_icon_report-conversion-program.ico")
+            icon_path = resource_path("static/icons/new_icon_report-conversion-program.ico")
             self.root.iconbitmap(icon_path)
         except Exception as e:
             print(f"Не удалось установить иконку: {e}")
@@ -150,8 +152,8 @@ class Main_gui:
             self.progresslabel_var.set("Работает...")
 
         if self.ubroutine_Jp_var.get():
-            jp_prog = JpProgram.JpMain(mask_date=self.last_mouns_last_day)
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
+            jp_prog = JpMain(mask_date=self.last_mouns_last_day)
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -163,7 +165,7 @@ class Main_gui:
                 cz_prog = CzMain(self.root, dop_date=1, mask_date=self.last_mouns_last_day)
             else:
                 cz_prog = CzMain(self.root, mask_date=self.last_mouns_last_day)
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
             excelPr.write_to_sheet(cz_prog.main(), "СЗ")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -172,7 +174,7 @@ class Main_gui:
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain(mask_date=self.last_mouns_last_day)
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -183,7 +185,7 @@ class Main_gui:
 
         if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
             ge_prog = GeneProg(mask_date=self.last_mouns_last_day)
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
         if not self.start_no_gui_var:
@@ -203,8 +205,8 @@ class Main_gui:
             self.progresslabel_var.set("Работает...")
 
         if self.ubroutine_Jp_var.get():
-            jp_prog = JpProgram.JpMain()
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
+            jp_prog = JpMain()
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
             excelPr.write_to_sheet(jp_prog.main(), "ЖП")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -216,7 +218,7 @@ class Main_gui:
                 cz_prog = CzMain(self.root, dop_date=1)
             else:
                 cz_prog = CzMain(self.root)
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
             excelPr.write_to_sheet(cz_prog.main(), "СЗ")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -225,7 +227,7 @@ class Main_gui:
 
         if self.ubroutine_Bam_var.get():
             bam_prog = BamMain()
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
             excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
             if not self.start_no_gui_var:
                 self.change_value_progress_bar_var(
@@ -236,7 +238,7 @@ class Main_gui:
 
         if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
             ge_prog = GeneProg()
-            excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
         if not self.start_no_gui_var:
@@ -269,7 +271,7 @@ class Main_gui:
             parent.title("Необходимо ввести данные")
             parent.geometry("600x180")
             try:
-                icon_path = resource_path("dirBook.ico")
+                icon_path = resource_path("static/icons/dirBook.ico")
                 parent.iconbitmap(icon_path)
             except Exception as e:
                 print(f"Не удалось установить иконку: {e}")
@@ -300,7 +302,7 @@ class Main_gui:
 
         def _reload_config():
             try:
-                self.config = JsonWork.JsonConfig()
+                self.config = handling_json.JsonConfig()
                 logger.info("JsonConfig reinitialized during checking_data_inputs recovery")
             except Exception:
                 logger.exception("Failed to reinitialize JsonConfig during recovery")

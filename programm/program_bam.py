@@ -3,10 +3,10 @@ from tkinter import messagebox
 
 import pandas as pd
 
-import ExcelPrint
-from JsonWork import JsonConfig
-from Search import SearchBam
-from log_utils import logger, attempt_recover
+import scripts.excel_enter as excel_enter
+from scripts.handling_json import JsonConfig
+from scripts.handling_data import SearchBam
+from scripts.handling_log import logger, attempt_recover
 
 
 
@@ -193,6 +193,6 @@ class BamMain:
 if __name__ == '__main__':
     run = BamMain()
     config = JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="BAM")
+    excelPr = excel_enter.ExcelWriter(config.getJPPathFile_output(), min_prog="BAM")
 
     excelPr.write_to_sheet(run.main(), "Бам по УП")

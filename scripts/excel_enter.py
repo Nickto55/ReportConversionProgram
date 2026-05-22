@@ -7,12 +7,12 @@ from openpyxl.styles import PatternFill, Font
 from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
 
-import JsonWork
+import scripts.handling_json as handling_json
 
 
 def auto_fit_columns(sheet):
     for column_cells in sheet.columns:
-        koo = JsonWork.JsonConfig()
+        koo = handling_json.JsonConfig()
         max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
         adjusted_width = (max_length + koo.getConfigsimbaProgram())  # Немного увеличим для красоты
         sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = adjusted_width
@@ -42,7 +42,7 @@ class ExcelWriter:
         self.alfavit = ['I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA',
                         'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM','AN']
 
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
 
     def write_to_sheet(self, data, sheet_name, start_row=1, start_col=1):
         """

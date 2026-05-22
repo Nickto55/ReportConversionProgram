@@ -2,13 +2,13 @@ from tkinter import messagebox
 
 import pandas as pd
 
-import JsonWork
+import scripts.handling_json as handling_json
 
 
 class SearchBam:
     def __init__(self, sheet_name):
         self.columns_save = []
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
         self.file_path = self.config.getBAMPathFile_input()
         self.sheet_name = sheet_name
         self.data = None
@@ -130,7 +130,7 @@ class SearchBam:
 
 class SearchJP:
     def __init__(self):
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
 
         self.file_path = self.config.getJPPathFile_input()
         self.data = None
@@ -167,7 +167,7 @@ class SearchCz:
         self.columns_save = []
         self.filtered_data = None
         self.headers = None
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
 
         self.file_path = self.config.getCzPathFile_input()
         self.data = None
@@ -280,7 +280,7 @@ class SearchGe:
 
         self.data_ge = None
 
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
         self.file_path = self.config.getJPColumnName("Path for output excel")
 
     def sheet_name_list(self):

@@ -8,10 +8,11 @@ from tkinter import messagebox, ttk, Label, StringVar, Button, Spinbox
 import pandas as pd
 import plyer
 
-import ExcelPrint
-import JsonWork
-import Search
-from log_utils import logger, attempt_recover
+import scripts.excel_enter as excel_enter
+import scripts.handling_json as handling_json
+import scripts.handling_data as handling_data
+from scripts.handling_log import logger, attempt_recover
+
 
 
 def send_notification(title, message, settime=15, file_path=""):
@@ -37,17 +38,17 @@ class CzMain:
 
     def __init__(self, parent, accepted_chuse_user: bool = False, dop_date: int = None,mask_date:str = str(dt.now())):
         self.parent = parent
-        self.config = JsonWork.JsonConfig()
+        self.config = handling_json.JsonConfig()
 
         self.dop_date = dop_date
 
         def _init_search():
-            s = Search.SearchCz()
+            s = handling_data.SearchCz()
             return s, s.get_dict_all_data(), s.get_headers()
 
         def _reload_search():
             try:
-                self.search = Search.SearchCz()
+                self.search = handling_data.SearchCz()
                 logger.info("Reinitialized SearchCz during recovery in CzMain.__init__")
             except Exception:
                 logger.exception("Failed to reinitialize SearchCz during recovery in CzMain.__init__")
@@ -308,7 +309,7 @@ class CzMain:
                                 break
 
             if pd.isna(date_search) and not pd.isna(self.dop_date):
-                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output())
                 excelPr.write_to_sheet(result_list, "FOC_Cz")
 
             return count_foc
@@ -376,7 +377,7 @@ class CzMain:
                                     break
                                 break
             if pd.isna(date_search) and not pd.isna(self.dop_date):
-                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output())
                 excelPr.write_to_sheet(result_list, "TOC_Cz")
 
             return count_foc
@@ -444,7 +445,7 @@ class CzMain:
                                     break
                                 break
             if pd.isna(date_search) and not pd.isna(self.dop_date):
-                excelPr = ExcelPrint.ExcelWriter(self.config.getJPPathFile_output())
+                excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output())
                 excelPr.write_to_sheet(result_list, "POC_Cz")
             return count_foc
 
@@ -878,8 +879,8 @@ class GuiManager:
 if __name__ == "__main__":
     root = tk.Tk()
 
-    config = JsonWork.JsonConfig()
-    excelPr = ExcelPrint.ExcelWriter(config.getJPPathFile_output(), min_prog="Cz")
+    config = handling_json.JsonConfig()
+    excelPr = excel_enter.ExcelWriter(config.getJPPathFile_output(), min_prog="Cz")
 
     run = CzMain(root)
     excelPr.write_to_sheet(run.main(), "СЗ")
