@@ -7,7 +7,7 @@ import plyer
 
 import scripts.excel_enter as excel_enter
 import scripts.handlings.handling_json as handling_json
-import scripts.handlings.handling_data as handling_data
+import scripts.handlings.handling_classes as handling_classes
 from scripts.handlings.handling_log import logger, attempt_recover
 
 
@@ -29,12 +29,12 @@ class JpMain:
         self.config = handling_json.JsonConfig()
         self.root = root
         def _init_search():
-            s = handling_data.SearchJP()
+            s = handling_classes.SearchJP()
             return s, s.get_dict_all_data()
 
         def _reload_search():
             try:
-                self.search = handling_data.SearchJP()
+                self.search = handling_classes.SearchJP()
                 logger.info("Reinitialized SearchJP during recovery in JpMain.__init__")
             except Exception:
                 logger.exception("Failed to reinitialize SearchJP during recovery in JpMain.__init__")

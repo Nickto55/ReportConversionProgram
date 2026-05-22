@@ -5,7 +5,7 @@ import pandas as pd
 
 import scripts.excel_enter as excel_enter
 from scripts.handlings.handling_json import JsonConfig
-from scripts.handlings.handling_data import SearchBam
+from scripts.handlings.handling_classes import SearchBam
 from scripts.handlings.handling_log import logger, attempt_recover
 
 

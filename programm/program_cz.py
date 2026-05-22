@@ -10,7 +10,7 @@ import plyer
 
 import scripts.excel_enter as excel_enter
 import scripts.handlings.handling_json as handling_json
-import scripts.handlings.handling_data as handling_data
+import scripts.handlings.handling_classes as handling_classes
 from scripts.handlings.handling_log import logger, attempt_recover
 
 
@@ -43,12 +43,12 @@ class CzMain:
         self.dop_date = dop_date
 
         def _init_search():
-            s = handling_data.SearchCz()
+            s = handling_classes.SearchCz()
             return s, s.get_dict_all_data(), s.get_headers()
 
         def _reload_search():
             try:
-                self.search = handling_data.SearchCz()
+                self.search = handling_classes.SearchCz()
                 logger.info("Reinitialized SearchCz during recovery in CzMain.__init__")
             except Exception:
                 logger.exception("Failed to reinitialize SearchCz during recovery in CzMain.__init__")
