@@ -1,1213 +1,712 @@
-import argparse
-import calendar
-import ctypes
 import os
 import sys
 import tkinter as tk
-import webbrowser
 from datetime import datetime as dt
-from tkinter import *
-from tkinter import ttk, messagebox, BOTH, filedialog, END
+from tkinter import (
+    ttk, messagebox, BOTH, filedialog, END, StringVar, IntVar, BooleanVar,
+    Frame, LabelFrame, Label, Entry, Button, Checkbutton, Radiobutton, Frame
+)
 from tkinter.ttk import Progressbar
 
-import plyer
-
-import static.config as Config
-import scripts.excel_enter as excel_enter
-import scripts.handlings.handling_json as handling_json
-
-from programm.program_jp import JpMain
-from programm.program_bam import BamMain
-from programm.program_cz import CzMain
-from programm.program_generalization import GeneProg
-
-from scripts.handlings.handling_log import logger, attempt_recover
+from report_conversion import ReportConversion, resource_path, updateInfoConfig
 
 
-def send_notification(title, message, settime=15, file_path=""):
-    plyer.notification.notify(title=title, message=message, app_name="Good Morning (JP)", timeout=settime, app_icon=resource_path("static/icons/new_icon_report-conversion-program.ico"))
-
-
-def updateInfoConfig(fileOrDir: int):
-    root_select_file = tk.Tk()
-    root_select_file.withdraw()  # скрываем главное окно
-    if fileOrDir:
-        file_path = filedialog.askopenfilename(title="Выберите файл")
-    else:
-        file_path = filedialog.askdirectory(title="Выберите папку")
-    return file_path
-
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
-class Main_gui:
-    def __init__(self, root):
-        """
-        Создаёт главное ок  но приложения
-        :param root: окно
-        """
-
-        self.start_no_gui_var = False
-        self.start_button_var = False
-        self.progresslabel_var = StringVar(value="...")
-        self.config = handling_json.JsonConfig()
-
-        """
-        
-        Размеры окон
-        
-        """
-        self.distance_y_root = self.config.getConfigSizeYProgram()
-        self.distance_x_root = self.config.getConfigSizeXProgram()
-
-        """
-        
-        Настройка главного окна
-        
-        """
+class MainGUI:
+    """
+    Класс GUI интерфейса.
+    Вся отрисовка и взаимодействие с пользователем.
+    """
+    
+    def __init__(self, root, app: ReportConversion):
+        self.app = app
         self.root = root
-        self.root.title(self.config.getConfigNameAssemblyProgram())
-        self.root.geometry(f"{self.distance_x_root}x{self.distance_y_root}")
-        self.root.resizable(False, False)
-
-        """
         
-        Меню
-        
-        """
-        main_menu = tk.Menu()
-        """Подменю: Settings"""
-        settings_menu = tk.Menu(tearoff=0)
-        settings_menu.add_command(label="debug mode", command=self.gui_debug_mode)
-
-        """Подменю: Run"""
-        run_menu = tk.Menu(tearoff=0)
-        # run_menu.add_cascade(label="Открыть программу с консолью", command=self.console_create_in_program)
-        run_menu.add_cascade(label="Ручной запуск обновлений прошлого месяца",
-                             command=lambda: self.update_last_mouns(progress_barbar=True))
-        """Основное меню"""
-        main_menu.add_cascade(label="Settings", menu=settings_menu)
-        main_menu.add_cascade(label="Run", menu=run_menu)
-        self.root.config(menu=main_menu)
-
-        """
-        
-        Переменные
-        
-        """
+        # Переменные GUI
+        self.progresslabel_var = StringVar(value="...")
         self.brogressbar_value_var = IntVar(value=0)
-
-        self.modification = IntVar(value=1)
-        self.time_and_day_now = str(dt.now())
-        self.ubroutine_Jp_var = BooleanVar(value=True)
-        self.ubroutine_Cz_var = BooleanVar(value=True)
-        self.dop_date_Cz_var = BooleanVar(value=False)
-        self.ubroutine_Bam_var = BooleanVar(value=True)
-        self.availability_of_required_data = True
-        self.parent_label_column_jp_bool = False
-        self.parent_label_column_cz_bool = False
-        self.parent_label_column_BAM_bool = False
-        current_year = int(str(dt.now())[:4])
-        current_month = int(str(dt.now())[5:7])
-
-        if current_month == 1:
-            last_month_num = 12
-            last_year = current_year - 1
-        else:
-            last_month_num = current_month - 1
-            last_year = current_year
-        self.count_day_last_mounth = calendar.monthrange(last_year, last_month_num)[1]
-        self.last_mouns_last_day = f"{last_year}-{last_month_num}-{self.count_day_last_mounth}"
-
-        """
+        self.modification_var = IntVar(value=1)
+        self.ubroutine_Jp_var = BooleanVar(value=app.is_jp_enabled())
+        self.ubroutine_Cz_var = BooleanVar(value=app.is_cz_enabled())
+        self.dop_date_Cz_var = BooleanVar(value=app.is_cz_dop_date())
+        self.ubroutine_Bam_var = BooleanVar(value=app.is_bam_enabled())
         
-        Вызовы функций
+        # Синхронизация переменных с app
+        self._sync_vars_to_app()
         
-        """
+        self._setup_window()
+        self._create_menu()
+        self._create_gui()
+        
+        # Проверка данных при старте
+        self._check_data_on_startup()
+        
+        # Мгновенный старт если нужен
+        if app.should_start_immediately():
+            self.start_button_command()
+    
+    def _sync_vars_to_app(self):
+        """Синхронизирует переменные GUI с логикой."""
+        self.ubroutine_Jp_var.trace_add("write", lambda *args: self.app.set_jp_enabled(self.ubroutine_Jp_var.get()))
+        self.ubroutine_Cz_var.trace_add("write", lambda *args: self.app.set_cz_enabled(self.ubroutine_Cz_var.get()))
+        self.ubroutine_Bam_var.trace_add("write", lambda *args: self.app.set_bam_enabled(self.ubroutine_Bam_var.get()))
+        self.dop_date_Cz_var.trace_add("write", lambda *args: self.app.set_cz_dop_date(self.dop_date_Cz_var.get()))
+    
+    def _setup_window(self):
+        """Настраивает главное окно."""
+        size = self.app.get_window_size()
+        self.root.title(self.app.get_program_title())
+        self.root.geometry(f"{size['x']}x{size['y']}")
+        self.root.resizable(False, False)
+        
         try:
             icon_path = resource_path("static/icons/new_icon_report-conversion-program.ico")
             self.root.iconbitmap(icon_path)
         except Exception as e:
             print(f"Не удалось установить иконку: {e}")
-
-        self.checking_data_inputs()
-        if not self.start_no_gui_var:
-            self.create_gui()
-
-    def console_create_in_program(self):
-        self.args.console = True
-        self.create_gui()
-
-    def update_last_mouns(self, progress_barbar: bool = False):
-
-        if not self.start_no_gui_var and progress_barbar:
-            self.brogressbar_value_var.set(0)
-            self.progressbar.update()
-            self.progresslabel_var.set("Работает...")
-
-        if self.ubroutine_Jp_var.get():
-            jp_prog = JpMain(mask_date=self.last_mouns_last_day)
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
-            excelPr.write_to_sheet(jp_prog.main(), "ЖП")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-
-        if self.ubroutine_Cz_var.get():
-            if self.dop_date_Cz_var.get():
-                cz_prog = CzMain(self.root, dop_date=1, mask_date=self.last_mouns_last_day)
-            else:
-                cz_prog = CzMain(self.root, mask_date=self.last_mouns_last_day)
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
-            excelPr.write_to_sheet(cz_prog.main(), "СЗ")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-
-        if self.ubroutine_Bam_var.get():
-            bam_prog = BamMain(mask_date=self.last_mouns_last_day)
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
-            excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-        if not self.start_no_gui_var:
-            self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
-
-        if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
-            ge_prog = GeneProg(mask_date=self.last_mouns_last_day)
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
-            excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
-
-        if not self.start_no_gui_var:
-            self.progresslabel_var.set("Программа завершена!")
-            self.progresslabel.update()
-
-        return
-
-    def start_button_command(self):
-        if int(self.time_and_day_now[8:10]) <= 5:
-            if messagebox.askyesno("Внимание", "Обновить данные за прошлый месяц?"):
-                self.update_last_mouns()
-
-        if not self.start_no_gui_var:
-            self.brogressbar_value_var.set(0)
-            self.progressbar.update()
-            self.progresslabel_var.set("Работает...")
-
-        if self.ubroutine_Jp_var.get():
-            jp_prog = JpMain()
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Jp")
-            excelPr.write_to_sheet(jp_prog.main(), "ЖП")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-
-        if self.ubroutine_Cz_var.get():
-            if self.dop_date_Cz_var.get():
-                cz_prog = CzMain(self.root, dop_date=1)
-            else:
-                cz_prog = CzMain(self.root)
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Cz")
-            excelPr.write_to_sheet(cz_prog.main(), "СЗ")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-
-        if self.ubroutine_Bam_var.get():
-            bam_prog = BamMain()
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="BAM")
-            excelPr.write_to_sheet(bam_prog.main(), "Бам по УП")
-            if not self.start_no_gui_var:
-                self.change_value_progress_bar_var(
-                    100 // (int(self.ubroutine_Jp_var.get()) + int(self.ubroutine_Cz_var.get()) +
-                            int(self.ubroutine_Bam_var.get())))
-        if not self.start_no_gui_var:
-            self.change_value_progress_bar_var(100 - self.brogressbar_value_var.get())
-
-        if self.ubroutine_Bam_var.get() and self.ubroutine_Cz_var.get() and self.ubroutine_Jp_var.get():
-            ge_prog = GeneProg()
-            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
-            excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
-
-        if not self.start_no_gui_var:
-            self.progresslabel_var.set("Программа завершена!")
-            self.progresslabel.update()
-        send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
-
-        if self.start_no_gui_var:
-            sys.exit()
-
-    def recovery_data_inputs(self, dic_recovery: dict):
-        if not self.availability_of_required_data:
-            count_recovery_data_inputs = 0
-
-            def label_and_enntry(input_frame):
-                nonlocal count_recovery_data_inputs
-
-                label = Label(input_frame, text=f"{value} для {key}")
-                label.grid(row=count_recovery_data_inputs, column=0, sticky="w")
-                entryL = Entry(input_frame, width=71)
-                entryL.grid(row=count_recovery_data_inputs, column=1)
-                count_recovery_data_inputs += 1
-
-                return input_frame
-
-            def button_save_command():
-                messagebox.showinfo("Недоступно", "В разработке")
-
-            parent = tk.Toplevel(self.root)
-            parent.title("Необходимо ввести данные")
-            parent.geometry("600x180")
-            try:
-                icon_path = resource_path("static/icons/dirBook.ico")
-                parent.iconbitmap(icon_path)
-            except Exception as e:
-                print(f"Не удалось установить иконку: {e}")
-
-            main_faim = LabelFrame(parent, text="Введите:", height=100)
-            main_faim.pack(ipadx=5, ipady=5, fill=BOTH)
-
-            for key, values in dic_recovery.items():
-                for value in values:
-                    main_faim = label_and_enntry(main_faim)
-
-            button_save = Button(parent, text="Сохранить", command=button_save_command)
-            button_save.pack(anchor="se")
-
-            parent.mainloop()
-
-    def checking_data_inputs(self):
-        """
-        Для определения какие данные в json файле отсутсдвуют для корректной работы подпрограмм:
-        :return: None, если есть всё, или возвращения имяни не хватающего ключа
-        """
-        recovery_data_inputs = {"Program:": [], "ЖП": [], "СЗ": [], "BAM": [], "Ge": []}
-        data = {}
-
-        # Попытка безопасно загрузить конфиг с логированием и восстановлением
-        def _load_config_data():
-            return self.config.getData()
-
-        def _reload_config():
-            try:
-                self.config = handling_json.JsonConfig()
-                logger.info("JsonConfig reinitialized during checking_data_inputs recovery")
-            except Exception:
-                logger.exception("Failed to reinitialize JsonConfig during recovery")
-
+    
+    def _create_menu(self):
+        """Создает меню приложения."""
+        main_menu = tk.Menu()
+        
+        # Подменю: Settings
+        settings_menu = tk.Menu(tearoff=0)
+        settings_menu.add_command(label="debug mode", command=self.gui_debug_mode)
+        
+        # Подменю: Run
+        run_menu = tk.Menu(tearoff=0)
+        run_menu.add_cascade(
+            label="Ручной запуск обновлений прошлого месяца",
+            command=lambda: self.update_last_mouns(progress_barbar=True)
+        )
+        
+        main_menu.add_cascade(label="Settings", menu=settings_menu)
+        main_menu.add_cascade(label="Run", menu=run_menu)
+        self.root.config(menu=main_menu)
+    
+    def _check_data_on_startup(self):
+        """Проверяет данные при запуске."""
+        result = self.app.checking_data_inputs()
+        if result.get("error") == "structure_mismatch":
+            messagebox.showerror(
+                "Ошибка",
+                "Структура файла конфига нарушена, или значительно обновлена в последнем обнавлении\nУдалите текущий файл конфига"
+            )
+        elif result.get("error") == "local_keys_mismatch":
+            if messagebox.askyesno("внимане", "Вайл конфига был изменён, хотите внести возможные изменения?"):
+                # Восстановление ключей
+                pass
+        elif result.get("error") == "missing_values":
+            self._show_recovery_dialog(result["data"])
+    
+    def _show_recovery_dialog(self, data: dict):
+        """Показывает диалог восстановления данных."""
+        parent = tk.Toplevel(self.root)
+        parent.title("Необходимо ввести данные")
+        parent.geometry("600x180")
+        
         try:
-            data = attempt_recover(_load_config_data, recover_funcs=[_reload_config], attempts=2)
-        except Exception:
-            logger.exception("checking_data_inputs: cannot load config data; proceeding with empty data")
-            data = {}
-        """
-        Проверка наличия всех ключей, глубина = 2
-        """
-        try:
-            lose_key_list = Config.configProgram.keys() - data.keys()
-        except Exception:
-            logger.exception("Failed to determine missing top-level config keys")
-            lose_key_list = Config.configProgram.keys()
-
-        if len(lose_key_list) != 0:
-            logger.warning("Config structure mismatch, missing keys: %s", lose_key_list)
-            try:
-                messagebox.showerror("Ошибка",
-                                     "Структура файла конфига нарушена, или значительно обновлена в последнем обнавлении\nУдалите текущий файл конфига")
-            except Exception:
-                logger.exception("Failed to show messagebox for config structure error")
-
-        for local_key in list(data.keys()):
-            try:
-                local_lose_key_list = Config.configProgram[local_key].keys() - data[local_key].keys()
-                if len(local_lose_key_list) != 0:
-                    try:
-                        ask = messagebox.askyesno("внимане",
-                                                  "Вайл конфига был изменён, хотите внести возможные изменения?")
-                    except Exception:
-                        logger.exception("Failed to show messagebox when local keys changed")
-                        ask = False
-                    if ask:
-                        for i in local_lose_key_list:
-                            logger.info("Recovering missing key %s in section %s", i, local_key)
-                            try:
-                                self.config.recoveryLoseKeyAndValue(local_key, i,
-                                                                    Config.configProgram[local_key].get(i, ""))
-                            except Exception:
-                                logger.exception("recoveryLoseKeyAndValue failed for %s/%s", local_key, i)
-            except Exception:
-                logger.exception("Error while checking local config keys for %s", local_key)
-
-        """
-        Проверка всех значений
-        """
-
-        for key_program in list(data.keys()):
-            try:
-                for key_value in data[key_program].keys():
-                    value_config = data[key_program].get(key_value, "")
-                    if key_value in Config.keys_for_unnecessary_data.get(key_program, []):
-                        if value_config == "" or value_config == []:
-                            if key_program == "Program:":
-                                try:
-                                    self.config.recoveryLoseKeyAndValue(key_program, key_value,
-                                                                        Config.configProgram[key_program].get(key_value,
-                                                                                                              ""))
-                                except Exception:
-                                    logger.exception("Failed to recover Program: %s", key_value)
-                            else:
-                                self.availability_of_required_data = False
-                                recovery_data_inputs.setdefault(key_program, []).append(key_value)
-            except Exception:
-                logger.exception("Error while checking values in config section %s", key_program)
-
-        # Попытка автоматической перестройки/восстановления, если есть недостающие значения
-        try:
-            if any(recovery_data_inputs.values()):
-                logger.info("Attempting automatic recovery for missing config values: %s", recovery_data_inputs)
-                try:
-                    self.recovery_data_inputs(recovery_data_inputs)
-                except Exception:
-                    logger.exception("Automatic recovery (recovery_data_inputs) failed")
-        except Exception:
-            logger.exception("Unexpected error during automatic recovery processing")
-
-        # Всегда вызываем recovery_data_inputs, как было раньше
-        try:
-            self.recovery_data_inputs(recovery_data_inputs)
-        except Exception:
-            logger.exception("Final call to recovery_data_inputs failed")
-
-    def setings_jp_notebook(self, setings_notebook):
-        def button_puth_command():
-            self.config.setJPFilePathAndName_input(updateInfoConfig(1))
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getJPPathFile_input())
-
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getJPNameFile_input())
-
+            icon_path = resource_path("static/icons/dirBook.ico")
+            parent.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"Не удалось установить иконку: {e}")
+        
+        main_frame = LabelFrame(parent, text="Введите:", height=100)
+        main_frame.pack(ipadx=5, ipady=5, fill=BOTH)
+        
+        count = 0
+        entries = {}
+        
+        for key, values in data.items():
+            for value in values:
+                label = Label(main_frame, text=f"{value} для {key}")
+                label.grid(row=count, column=0, sticky="w")
+                entry = Entry(main_frame, width=71)
+                entry.grid(row=count, column=1)
+                entries[(key, value)] = entry
+                count += 1
+        
         def button_save_command():
-            self.config.setJPColumnName("Table of contents: List_date", entry_date.get())
-            self.config.setJPFilePathAndName_input(entry_puth.get())
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getJPPathFile_input())
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getJPNameFile_input())
-            entry_date.delete(0, END)
-            entry_date.insert(0, self.config.getJPColumnName("Table of contents: List_date"))
-
-        def label_column_command():
-            def dismiss():
-                self.parent_label_column_jp.grab_release()
-                self.parent_label_column_jp.destroy()
-                self.parent_label_column_jp_bool = False
-
-            def command_save_button():
-                self.config.setJPColumnName("Table of contents: Date", entry_Date.get())
-                self.config.setJPColumnName("Table of contents: Date removed", entry_Date_removed.get())
-                self.config.setJPColumnName("Table of contents: DCE", entry_Date_dse.get())
-                self.config.setJPColumnName("Table of contents: Question accepted Full name",
-                                            entry_Date_full_accepted_name.get())
-                self.config.setJPColumnName("Table of contents: Question removed Full name",
-                                            entry_Date_full_removed_name.get())
-                self.config.setJPColumnName("Table of contents: Namber", entry_Date_namber.get())
-                self.config.setJPColumnName("Table of contents: Name", entry_Date_name.get())
-                self.config.setJPColumnName("Table of contents: Translation", entry_Date_translation.get())
-
-                dismiss()
-
-            def command_reset_button():
-                self.config.setJPColumnName("Table of contents: Date",
-                                            Config.configProgram["ЖП"].get("Table of contents: Date", ""))
-                self.config.setJPColumnName("Table of contents: Date removed",
-                                            Config.configProgram["ЖП"].get("Table of contents: Date removed", ""))
-                self.config.setJPColumnName("Table of contents: DCE",
-                                            Config.configProgram["ЖП"].get("Table of contents: DCE", ""))
-                self.config.setJPColumnName("Table of contents: Question accepted Full name",
-                                            Config.configProgram["ЖП"].get(
-                                                "Table of contents: Question accepted Full name", ""))
-                self.config.setJPColumnName("Table of contents: Question removed Full name",
-                                            Config.configProgram["ЖП"].get(
-                                                "Table of contents: Question removed Full name", ""))
-                self.config.setJPColumnName("Table of contents: Namber",
-                                            Config.configProgram["ЖП"].get("Table of contents: Namber", ""))
-                self.config.setJPColumnName("Table of contents: Name",
-                                            Config.configProgram["ЖП"].get("Table of contents: Name", ""))
-                self.config.setJPColumnName("Table of contents: Translation",
-                                            Config.configProgram["ЖП"].get("Table of contents: Translation", ""))
-
-                entry_Date.delete(0, END)
-                entry_Date.insert(0, self.config.getJPColumnName("Table of contents: Date"))
-                entry_Date_removed.delete(0, END)
-                entry_Date_removed.insert(0, self.config.getJPColumnName("Table of contents: Date removed"))
-                entry_Date_dse.delete(0, END)
-                entry_Date_dse.insert(0, self.config.getJPColumnName("Table of contents: DCE"))
-                entry_Date_full_accepted_name.delete(0, END)
-                entry_Date_full_accepted_name.insert(0, self.config.getJPColumnName(
-                    "Table of contents: Question accepted Full name"))
-                entry_Date_full_removed_name.delete(0, END)
-                entry_Date_full_removed_name.insert(0, self.config.getJPColumnName(
-                    "Table of contents: Question removed Full name"))
-                entry_Date_namber.delete(0, END)
-                entry_Date_namber.insert(0, self.config.getJPColumnName("Table of contents: Namber"))
-                entry_Date_name.delete(0, END)
-                entry_Date_name.insert(0, self.config.getJPColumnName("Table of contents: Name"))
-                entry_Date_translation.delete(0, END)
-                entry_Date_translation.insert(0, self.config.getJPColumnName("Table of contents: Translation"))
-
-            if self.parent_label_column_jp_bool:
-                self.parent_label_column_jp.destroy()
-                self.parent_label_column_jp_bool = False
-            else:
-                self.parent_label_column_jp = tk.Toplevel(self.root)
-                self.parent_label_column_jp_bool = True
-                self.parent_label_column_jp.title("Изменение столбцов")
-                self.parent_label_column_jp.geometry("300x197")
-                self.parent_label_column_jp.protocol("WM_DELETE_WINDOW", lambda: dismiss())
-                self.parent_label_column_jp.wm_attributes("-topmost", True)
-
-                frame = Frame(self.parent_label_column_jp)
-                frame.pack(fill=BOTH)
-
-                label_Date = Label(frame, text=f'Дата: ')
-                label_Date.grid(row=0, column=0, sticky="w")
-                entry_Date = Entry(frame, width=28)
-                entry_Date.grid(row=0, column=1)
-                entry_Date.delete(0, END)
-                entry_Date.insert(0, self.config.getJPColumnName("Table of contents: Date"))
-
-                label_Date_removed = Label(frame, text=f'Дата выполнения:: ')
-                label_Date_removed.grid(row=1, column=0, sticky="w")
-                entry_Date_removed = Entry(frame, width=28)
-                entry_Date_removed.grid(row=1, column=1)
-                entry_Date_removed.delete(0, END)
-                entry_Date_removed.insert(0, self.config.getJPColumnName("Table of contents: Date removed"))
-
-                label_Date_dse = Label(frame, text=f'ДСЕ: ')
-                label_Date_dse.grid(row=2, column=0, sticky="w")
-                entry_Date_dse = Entry(frame, width=28)
-                entry_Date_dse.grid(row=2, column=1)
-                entry_Date_dse.delete(0, END)
-                entry_Date_dse.insert(0, self.config.getJPColumnName("Table of contents: DCE"))
-
-                label_Date_full_accepted_name = Label(frame, text=f'Вопрос принят ФИО: ')
-                label_Date_full_accepted_name.grid(row=3, column=0, sticky="w")
-                entry_Date_full_accepted_name = Entry(frame, width=28)
-                entry_Date_full_accepted_name.grid(row=3, column=1)
-                entry_Date_full_accepted_name.delete(0, END)
-                entry_Date_full_accepted_name.insert(0, self.config.getJPColumnName(
-                    "Table of contents: Question accepted Full name"))
-
-                label_Date_full_removed_name = Label(frame, text=f'Вопрос снят ФИО: ')
-                label_Date_full_removed_name.grid(row=4, column=0, sticky="w")
-                entry_Date_full_removed_name = Entry(frame, width=28)
-                entry_Date_full_removed_name.grid(row=4, column=1)
-                entry_Date_full_removed_name.delete(0, END)
-                entry_Date_full_removed_name.insert(0, self.config.getJPColumnName(
-                    "Table of contents: Question removed Full name"))
-
-                label_Date_namber = Label(frame, text=f'Номер: ')
-                label_Date_namber.grid(row=5, column=0, sticky="w")
-                entry_Date_namber = Entry(frame, width=28)
-                entry_Date_namber.grid(row=5, column=1, sticky="w")
-                entry_Date_namber.delete(0, END)
-                entry_Date_namber.insert(0, self.config.getJPColumnName("Table of contents: Namber"))
-
-                label_Date_name = Label(frame, text=f'Наименование: ')
-                label_Date_name.grid(row=6, column=0, sticky="w")
-                entry_Date_name = Entry(frame, width=28)
-                entry_Date_name.grid(row=6, column=1)
-                entry_Date_name.delete(0, END)
-                entry_Date_name.insert(0, self.config.getJPColumnName("Table of contents: Name"))
-
-                label_Date_translation = Label(frame, text=f'Перевод: ')
-                label_Date_translation.grid(row=7, column=0, sticky="w")
-                entry_Date_translation = Entry(frame, width=28)
-                entry_Date_translation.grid(row=7, column=1)
-                entry_Date_translation.delete(0, END)
-                entry_Date_translation.insert(0, self.config.getJPColumnName("Table of contents: Translation"))
-
-                button_reset_column = Button(frame, text="Сбросить всё", command=command_reset_button)
-                button_reset_column.grid(row=8, column=0, sticky="w")
-
-                button_save_column = Button(frame, text="Сохранить", command=command_save_button)
-                button_save_column.grid(row=8, column=1, sticky="e")
-
-        label_puth = Label(setings_notebook, text="Путь:")
-        label_puth.grid(row=0, column=0)
-
-        entry_puth = Entry(setings_notebook, width=85)
-        entry_puth.grid(row=0, column=1)
-        entry_puth.delete(0, END)
-        entry_puth.insert(0, self.config.getJPPathFile_input())
-
-        button_puth = Button(setings_notebook, text="Изменить", command=button_puth_command)
-        button_puth.grid(row=0, column=2, ipadx=5)
-
-        label_name = Label(setings_notebook, text="Имя: ")
-        label_name.grid(row=1, column=0)
-
-        entry_name = Entry(setings_notebook, width=85)
-        entry_name.grid(row=1, column=1)
-        entry_name.delete(0, END)
-        entry_name.insert(0, self.config.getJPNameFile_input())
-
-        label_date = Label(setings_notebook, text="Количество дней отображения:")
-        label_date.place(x=0, y=50)
-        entry_date = Entry(setings_notebook, width=3)
-        entry_date.place(x=180, y=50)
-        entry_date.delete(0, END)
-
-        entry_date.insert(0, self.config.getJPColumnName("Table of contents: List_date"))
-
-        label_column = Label(setings_notebook, text="Настройка столбцов:")
-        label_column.place(x=0, y=75)
-
-        button_column = Button(setings_notebook, text="Настроить", command=label_column_command)
-        button_column.place(x=125, y=75)
-        button_save = Button(setings_notebook, text="Сохранить", command=button_save_command)
-        button_save.place(x=552, y=156)
-
-        return setings_notebook
-
-    def setings_bam_notebook(self, setings_notebook):
-        def button_puth_command():
-            self.config.setBAMFilePathAndName_input(updateInfoConfig(1))
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getBAMPathFile_input())
-
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getBAMNameFile_input())
-
-        def button_save_command():
-            self.config.setBAMColumnName("Table of contents: List_date", entry_date.get())
-            self.config.setBAMFilePathAndName_input(entry_puth.get())
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getBAMPathFile_input())
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getBAMNameFile_input())
-            entry_date.delete(0, END)
-            entry_date.insert(0, self.config.getBAMColumnName("Table of contents: List_date"))
-
-        def label_column_command():
-            def dismiss(window):
-                self.parent_label_column_BAM.grab_release()
-                self.parent_label_column_BAM.destroy()
-                self.parent_label_column_BAM_bool = False
-
-            def command_save_button():
-                self.config.setBAMColumnName("Table of contents: Date", entry_Date.get())
-                self.config.setBAMColumnName("Table of contents: listes_excel", entry_listes_excel.get().split(","))
-
-                dismiss(self.parent_label_column_BAM)
-
-            def command_reset_button():
-                self.config.setBAMColumnName("Table of contents: Date",
-                                             Config.configProgram["BAM"].get("Table of contents: Date", ""))
-                self.config.setBAMColumnName("Table of contents: listes_excel",
-                                             Config.configProgram["BAM"].get("Table of contents: listes_excel", ""))
-
-                entry_Date.delete(0, END)
-                entry_Date.insert(0, self.config.getBAMColumnName("Table of contents: Date"))
-                entry_listes_excel.delete(0, END)
-                entry_listes_excel.insert(0,
-                                          self.config.getBAMColumnName("Table of contents: listes_excel").replace("[",
-                                                                                                                  "").replace(
-                                              "]", ""))
-
-            if self.parent_label_column_BAM_bool:
-                self.parent_label_column_BAM.destroy()
-                self.parent_label_column_BAM_bool = False
-            else:
-                self.parent_label_column_BAM = tk.Toplevel(self.root)
-                self.parent_label_column_BAM_bool = True
-                self.parent_label_column_BAM.title("Изменение столбцов")
-                self.parent_label_column_BAM.geometry("269x68")
-                self.parent_label_column_BAM.protocol("WM_DELETE_WINDOW", lambda: dismiss(
-                    self.parent_label_column_BAM))  # перехватываем нажатие на крестик
-                self.parent_label_column_BAM.wm_attributes("-topmost", True)
-
-                frame = Frame(self.parent_label_column_BAM)
-                frame.pack(fill=BOTH)
-
-                label_Date = Label(frame, text=f'Дата: ')
-                label_Date.grid(row=0, column=0, sticky="w")
-                entry_Date = Entry(frame, width=28)
-                entry_Date.grid(row=0, column=1)
-                entry_Date.delete(0, END)
-                entry_Date.insert(0, self.config.getBAMColumnName("Table of contents: Date"))
-
-                label_listes_excel = Label(frame, text=f'Назван. листов: ')
-                label_listes_excel.grid(row=1, column=0, sticky="w")
-                entry_listes_excel = Entry(frame, width=28)
-                entry_listes_excel.grid(row=1, column=1)
-                entry_listes_excel.delete(0, END)
-                entry_listes_excel.insert(0,
-                                          self.config.getBAMColumnName("Table of contents: listes_excel").replace("[",
-                                                                                                                  "").replace(
-                                              "]", ""))
-
-                button_reset_column = Button(frame, text="Сбросить всё", command=command_reset_button)
-                button_reset_column.grid(row=8, column=0, sticky="w")
-
-                button_save_column = Button(frame, text="Сохранить", command=command_save_button)
-                button_save_column.grid(row=8, column=1, sticky="e")
-
-        label_puth = Label(setings_notebook, text="Путь:")
-        label_puth.grid(row=0, column=0)
-
-        entry_puth = Entry(setings_notebook, width=85)
-        entry_puth.grid(row=0, column=1)
-        entry_puth.delete(0, END)
-        entry_puth.insert(0, self.config.getBAMPathFile_input())
-
-        button_puth = Button(setings_notebook, text="Изменить", command=button_puth_command)
-        button_puth.grid(row=0, column=2, ipadx=5)
-
-        label_name = Label(setings_notebook, text="Имя: ")
-        label_name.grid(row=1, column=0)
-
-        entry_name = Entry(setings_notebook, width=85)
-        entry_name.grid(row=1, column=1)
-        entry_name.delete(0, END)
-        entry_name.insert(0, self.config.getBAMNameFile_input())
-
-        label_date = Label(setings_notebook, text="Количество дней отображения:")
-        label_date.place(x=0, y=50)
-        entry_date = Entry(setings_notebook, width=3)
-        entry_date.place(x=180, y=50)
-        entry_date.delete(0, END)
-        entry_date.insert(0, self.config.getBAMColumnName("Table of contents: List_date"))
-
-        label_column = Label(setings_notebook, text="Настройка столбцов:")
-        label_column.place(x=0, y=75)
-
-        button_column = Button(setings_notebook, text="Настроить", command=label_column_command)
-        button_column.place(x=125, y=75)
-        button_save = Button(setings_notebook, text="Сохранить", command=button_save_command)
-        button_save.place(x=552, y=156)
-
-        return setings_notebook
-
-    def setings_cz_notebook(self, setings_notebook):
-        def button_puth_command():
-            self.config.setCzFilePathAndName_input(updateInfoConfig(1))
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getCzPathFile_input())
-
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getCzNameFile_input())
-
-        def button_save_command():
-            self.config.setCzColumnName("Table of contents: List_date", entry_date.get())
-            self.config.setCzFilePathAndName_input(entry_puth.get())
-
-            entry_puth.delete(0, END)
-            entry_puth.insert(0, self.config.getCzPathFile_input())
-            entry_name.delete(0, END)
-            entry_name.insert(0, self.config.getCzNameFile_input())
-            entry_date.delete(0, END)
-            entry_date.insert(0, self.config.getCzColumnName("Table of contents: List_date"))
-
-        def label_rc_command():
-            def dismiss(window):
-                self.parent_label_column_cz.grab_release()
-                self.parent_label_column_cz.destroy()
-                self.parent_label_column_cz_bool = False
-
-            def command_save_button():
-                self.config.setCzColumnName("RC search parameters: Rc foc value", entry_foc.get().split(","))
-                self.config.setCzColumnName("RC search parameters: Rc toc value", entry_toc.get().split(","))
-                self.config.setCzColumnName("RC search parameters: Rc poc value", entry_poc.get().split(","))
-
-                dismiss(self.parent_label_column_cz)
-
-            def command_reset_button():
-                self.config.setCzColumnName("RC search parameters: Rc foc value",
-                                            Config.configProgram["СЗ"].get("RC search parameters: Rc foc value", ""))
-                self.config.setCzColumnName("RC search parameters: Rc toc value",
-                                            Config.configProgram["СЗ"].get("RC search parameters: Rc toc value", ""))
-                self.config.setCzColumnName("RC search parameters: Rc poc value",
-                                            Config.configProgram["СЗ"].get("RC search parameters: Rc poc value", ""))
-
-                entry_foc.delete(0, END)
-                entry_toc.delete(0, END)
-                entry_poc.delete(0, END)
-                entry_foc.insert(0, self.config.getCzColumnName("RC search parameters: Rc foc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-                entry_toc.insert(0, self.config.getCzColumnName("RC search parameters: Rc toc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-                entry_poc.insert(0, self.config.getCzColumnName("RC search parameters: Rc poc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-
-            if self.parent_label_column_cz_bool:
-                self.parent_label_column_cz.destroy()
-                self.parent_label_column_cz_bool = False
-            else:
-                self.parent_label_column_cz = tk.Toplevel(self.root)
-                self.parent_label_column_cz_bool = True
-                self.parent_label_column_cz.title("Изменение столбцов")
-                self.parent_label_column_cz.geometry("326x110")
-                self.parent_label_column_cz.protocol("WM_DELETE_WINDOW", lambda: dismiss(
-                    self.parent_label_column_cz))  # перехватываем нажатие на крестик
-                self.parent_label_column_cz.wm_attributes("-topmost", True)
-
-                frame = Frame(self.parent_label_column_cz)
-                frame.pack(fill=BOTH)
-
-                Label(frame, text="").grid(row=0, column=0)
-                label_info = Label(frame, text="Если нужно несколько значений пишите через запятую")
-                label_info.place(x=0, y=0)
-
-                label_foc = Label(frame, text=f'ФОЦ: ')
-                label_foc.grid(row=1, column=0, sticky="w")
-                entry_foc = Entry(frame, width=39)
-                entry_foc.grid(row=1, column=1)
-                entry_foc.delete(0, END)
-                entry_foc.insert(0, self.config.getCzColumnName("RC search parameters: Rc foc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-
-                label_toc = Label(frame, text=f'ТОЦ: ')
-                label_toc.grid(row=2, column=0, sticky="w")
-                entry_toc = Entry(frame, width=39)
-                entry_toc.grid(row=2, column=1)
-                entry_toc.delete(0, END)
-                entry_toc.insert(0, self.config.getCzColumnName("RC search parameters: Rc toc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-
-                label_poc = Label(frame, text=f'ПОЦ: ')
-                label_poc.grid(row=3, column=0, sticky="w")
-                entry_poc = Entry(frame, width=39)
-                entry_poc.grid(row=3, column=1)
-                entry_poc.delete(0, END)
-                entry_poc.insert(0, self.config.getCzColumnName("RC search parameters: Rc poc value").replace("[",
-                                                                                                              "").replace(
-                    "]", ""))
-
-                button_reset_column = Button(frame, text="Сбросить всё", command=command_reset_button)
-                button_reset_column.grid(row=4, column=0, sticky="w")
-
-                button_save_column = Button(frame, text="Сохранить", command=command_save_button)
-                button_save_column.grid(row=4, column=1, sticky="e")
-
-        def label_column_command():
-            def dismiss(window):
-                self.parent_label_column_cz.grab_release()
-                self.parent_label_column_cz.destroy()
-                self.parent_label_column_cz_bool = False
-
-            def command_save_button():
-                self.config.setCzColumnName("Table of contents: List", entry_List.get())
-                self.config.setCzColumnName("Table of contents: Accepted", entry_Accepted.get())
-                self.config.setCzColumnName("Table of contents: DCE", entry_Date_dse.get())
-                self.config.setCzColumnName("Table of contents: RC", entry_Rc.get())
-                self.config.setCzColumnName("Table of contents: Close", entry_Close.get())
-                self.config.setCzColumnName("Table of contents: Done", entry_Done.get())
-                self.config.setCzColumnName("Table of contents: Date writer", entry_Date_writer.get())
-
-                dismiss(self.parent_label_column_cz)
-
-            def command_reset_button():
-                self.config.setCzColumnName("Table of contents: List",
-                                            Config.configProgram["СЗ"].get("Table of contents: List", ""))
-                self.config.setCzColumnName("Table of contents: Accepted",
-                                            Config.configProgram["СЗ"].get("Table of contents: Accepted", ""))
-                self.config.setCzColumnName("Table of contents: DCE",
-                                            Config.configProgram["СЗ"].get("Table of contents: DCE", ""))
-                self.config.setCzColumnName("Table of contents: RC",
-                                            Config.configProgram["СЗ"].get("Table of contents: RC", ""))
-                self.config.setCzColumnName("Table of contents: Close",
-                                            Config.configProgram["СЗ"].get("Table of contents: Close", ""))
-                self.config.setCzColumnName("Table of contents: Done",
-                                            Config.configProgram["СЗ"].get("Table of contents: Done", ""))
-                self.config.setCzColumnName("Table of contents: Date writer",
-                                            Config.configProgram["СЗ"].get("Table of contents: Date writer", ""))
-
-                entry_List.delete(0, END)
-                entry_List.insert(0, self.config.getCzColumnName("Table of contents: List"))
-                entry_Accepted.delete(0, END)
-                entry_Accepted.insert(0, self.config.getCzColumnName("Table of contents: Accepted"))
-                entry_Date_dse.delete(0, END)
-                entry_Date_dse.insert(0, self.config.getCzColumnName("Table of contents: DCE"))
-                entry_Rc.delete(0, END)
-                entry_Rc.insert(0, self.config.getCzColumnName("Table of contents: RC"))
-                entry_Close.delete(0, END)
-                entry_Close.insert(0, self.config.getCzColumnName("Table of contents: Close"))
-                entry_Done.delete(0, END)
-                entry_Done.insert(0, self.config.getCzColumnName("Table of contents: Done"))
-                entry_Date_writer.delete(0, END)
-                entry_Date_writer.insert(0, self.config.getCzColumnName("Table of contents: Date writer"))
-
-            if self.parent_label_column_cz_bool:
-                self.parent_label_column_cz.destroy()
-                self.parent_label_column_cz_bool = False
-            else:
-                self.parent_label_column_cz = tk.Toplevel(self.root)
-                self.parent_label_column_cz_bool = True
-                self.parent_label_column_cz.title("Изменение столбцов")
-                self.parent_label_column_cz.geometry("270x173")
-                self.parent_label_column_cz.protocol("WM_DELETE_WINDOW", lambda: dismiss(
-                    self.parent_label_column_cz))  # перехватываем нажатие на крестик
-                self.parent_label_column_cz.wm_attributes("-topmost", True)
-
-                frame = Frame(self.parent_label_column_cz)
-                frame.pack(fill=BOTH)
-
-                label_List = Label(frame, text=f'Лист: ')
-                label_List.grid(row=0, column=0, sticky="w")
-                entry_List = Entry(frame, width=28)
-                entry_List.grid(row=0, column=1)
-                entry_List.delete(0, END)
-                entry_List.insert(0, self.config.getCzColumnName("Table of contents: List"))
-
-                label_Accepted = Label(frame, text="Подписано: ")
-                label_Accepted.grid(row=1, column=0, sticky="w")
-                entry_Accepted = Entry(frame, width=28)
-                entry_Accepted.grid(row=1, column=1)
-                entry_Accepted.delete(0, END)
-                entry_Accepted.insert(0, self.config.getCzColumnName("Table of contents: Accepted"))
-
-                label_Date_dse = Label(frame, text=f'ДСЕ: ')
-                label_Date_dse.grid(row=2, column=0, sticky="w")
-                entry_Date_dse = Entry(frame, width=28)
-                entry_Date_dse.grid(row=2, column=1)
-                entry_Date_dse.delete(0, END)
-                entry_Date_dse.insert(0, self.config.getCzColumnName("Table of contents: DCE"))
-
-                label_Rc = Label(frame, text=f'РЦ: ')
-                label_Rc.grid(row=3, column=0, sticky="w")
-                entry_Rc = Entry(frame, width=28)
-                entry_Rc.grid(row=3, column=1)
-                entry_Rc.delete(0, END)
-                entry_Rc.insert(0, self.config.getCzColumnName("Table of contents: RC"))
-
-                label_Close = Label(frame, text=f'Закрыто: ')
-                label_Close.grid(row=4, column=0, sticky="w")
-                entry_Close = Entry(frame, width=28)
-                entry_Close.grid(row=4, column=1)
-                entry_Close.delete(0, END)
-                entry_Close.insert(0, self.config.getCzColumnName("Table of contents: Close"))
-
-                label_Done = Label(frame, text=f'Выполнено: ')
-                label_Done.grid(row=5, column=0, sticky="w")
-                entry_Done = Entry(frame, width=28)
-                entry_Done.grid(row=5, column=1, sticky="w")
-                entry_Done.delete(0, END)
-                entry_Done.insert(0, self.config.getCzColumnName("Table of contents: Done"))
-
-                label_Date_writer = Label(frame, text=f'Наименование: ')
-                label_Date_writer.grid(row=6, column=0, sticky="w")
-                entry_Date_writer = Entry(frame, width=28)
-                entry_Date_writer.grid(row=6, column=1)
-                entry_Date_writer.delete(0, END)
-                entry_Date_writer.insert(0, self.config.getCzColumnName("Table of contents: Date writer"))
-
-                button_reset_column = Button(frame, text="Сбросить всё", command=command_reset_button)
-                button_reset_column.grid(row=8, column=0, sticky="w")
-
-                button_save_column = Button(frame, text="Сохранить", command=command_save_button)
-                button_save_column.grid(row=8, column=1, sticky="e")
-
-        label_puth = Label(setings_notebook, text="Путь:")
-        label_puth.grid(row=0, column=0)
-
-        entry_puth = Entry(setings_notebook, width=85)
-        entry_puth.grid(row=0, column=1)
-        entry_puth.delete(0, END)
-        entry_puth.insert(0, self.config.getCzPathFile_input())
-
-        button_puth = Button(setings_notebook, text="Изменить", command=button_puth_command)
-        button_puth.grid(row=0, column=2, ipadx=5)
-
-        label_name = Label(setings_notebook, text="Имя: ")
-        label_name.grid(row=1, column=0)
-
-        entry_name = Entry(setings_notebook, width=85)
-        entry_name.grid(row=1, column=1)
-        entry_name.delete(0, END)
-        entry_name.insert(0, self.config.getCzNameFile_input())
-
-        label_date = Label(setings_notebook, text="Количество дней отображения:")
-        label_date.place(x=0, y=50)
-        entry_date = Entry(setings_notebook, width=3)
-        entry_date.place(x=180, y=50)
-        entry_date.delete(0, END)
-        entry_date.insert(0, self.config.getCzColumnName("Table of contents: List_date"))
-
-        label_column = Label(setings_notebook, text="Настройка столбцов:")
-        label_column.place(x=0, y=75)
-
-        button_column = Button(setings_notebook, text="Настроить", command=label_column_command)
-        button_column.place(x=125, y=75)
-
-        label_rc = Label(setings_notebook, text="Настройка РЦ:")
-        label_rc.place(x=0, y=100)
-
-        button_rc = Button(setings_notebook, text="Настроить", command=label_rc_command)
-        button_rc.place(x=125, y=100)
-
-        label_dop_date = Label(setings_notebook, text="Дополнительные листы: ")
-        label_dop_date.place(x=0, y=126)
-
-        check_button_dop_date = Checkbutton(setings_notebook, variable=self.dop_date_Cz_var)
-        check_button_dop_date.place(x=150, y=126)
-
-        button_save = Button(setings_notebook, text="Сохранить", command=button_save_command)
-        button_save.place(x=552, y=156)
-
-        return setings_notebook
-
-    def create_gui(self):
-        """
-        Рисует главное окно
-        """
-
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--console", action="store_true", help="Запустить с консолью")
-        parser.add_argument("--cfile", action="store_true", help="Конфиг файла")
-        parser.add_argument("--pstart", action="store_true", help="Моментальный старт")
-        parser.add_argument("--nog", action="store_true", help="Без граф. оболочки")
-
-        self.args = parser.parse_args()
-
-        if self.args.cfile:
-            CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".ReportConversionProgram")
-            webbrowser.open(CONFIG_DIR)
-            self.root.destroy()
-            self.root.quit()
-            return None
-        if self.args.pstart:
-            self.start_button_var = True
-        if self.args.nog:
-            self.start_button_var = True
-            self.start_no_gui_var = True
-
-            self.root.destroy()
-            self.root.quit()
-
-            self.start_button_command()
-            return None
-        if self.args.console:
-            kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-            hStdOut = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
-
-            if hStdOut == -1 or hStdOut == 0:
-                # Если нет — создаём новую консоль
-                kernel32.AllocConsole()
-
-                # Перенаправляем stdout/stderr в новую консоль
-                sys.stdout = open('CONOUT$', 'w')
-                sys.stderr = open('CONOUT$', 'w')
-
+            messagebox.showinfo("Недоступно", "В разработке")
+        
+        button_save = Button(parent, text="Сохранить", command=button_save_command)
+        button_save.pack(anchor="se")
+    
+    def _create_gui(self):
+        """Создает основной интерфейс."""
+        size = self.app.get_window_size()
+        
         main_frame = Frame(self.root)
-        main_frame.place(x=0, y=0, height=self.distance_y_root, width=self.distance_x_root)
-
-        """
+        main_frame.place(x=0, y=0, height=size['y'], width=size['x'])
         
-        Левое крыло
-        
-        """
-
+        # === Левое крыло ===
         left_frame = LabelFrame(main_frame, text="Варианты программ:")
-        left_frame.place(x=0, y=0, height=self.distance_y_root * 2 / 7, width=self.distance_x_root / 5)
-
+        left_frame.place(x=0, y=0, height=size['y'] * 2 / 7, width=size['x'] / 5)
+        
         left_down_frame = LabelFrame(main_frame, text="Информация:")
-        left_down_frame.place(x=0, y=100, height=self.distance_y_root * 2 / 3 - self.distance_y_root * 2 / 7 - 4,
-                              width=self.distance_x_root / 5)
-
-        """Получаем и выводим информацию"""
-        label_time_now = Label(left_down_frame, text=f"Cейчас: {str(dt.now())[:10]}")
+        left_down_frame.place(
+            x=0, y=100, 
+            height=size['y'] * 2 / 3 - size['y'] * 2 / 7 - 4,
+            width=size['x'] / 5
+        )
+        
+        # Информация
+        label_time_now = Label(left_down_frame, text=f"Cейчас: {self.app.get_current_date()}")
         label_time_now.place(x=0, y=0)
-
-        try:
-            modification_time = os.path.getmtime(f"{os.getcwd()}/ReportConversionProgram.xlsx")
-            last_date_start = str(dt.fromtimestamp(modification_time))
-        except:
-            last_date_start = "-"
-
-        """Таймеры"""
-        label_time_last_start_program = Label(left_down_frame,
-                                              text=f"Файл изменён: {last_date_start[:10]}\n                              {last_date_start[11:16]}")
-        label_time_last_start_program.place(x=0, y=15)
-
-        """Созаем чеки"""
-        checkbut_jp = Checkbutton(left_frame, text="Jp", variable=self.ubroutine_Jp_var, onvalue=1)
-        checkbut_jp.grid(row=0, column=0, sticky="w")
-        checkbut_cz = Checkbutton(left_frame, text="Cz", variable=self.ubroutine_Cz_var, onvalue=1)
-        checkbut_cz.grid(row=1, column=0, sticky="w")
-        checkbut_bam = Checkbutton(left_frame, text="Bam", variable=self.ubroutine_Bam_var, onvalue=1)
-        checkbut_bam.grid(row=2, column=0, sticky="w")
-
-        """
         
-        Правое крыло
+        mod_info = self.app.get_file_modification_date()
+        label_time_last = Label(
+            left_down_frame,
+            text=f"Файл изменён: {mod_info['date']}\n                              {mod_info['time']}"
+        )
+        label_time_last.place(x=0, y=15)
         
-        """
-
+        # Чекбоксы подпрограмм
+        Checkbutton(left_frame, text="Jp", variable=self.ubroutine_Jp_var, onvalue=1).grid(row=0, column=0, sticky="w")
+        Checkbutton(left_frame, text="Cz", variable=self.ubroutine_Cz_var, onvalue=1).grid(row=1, column=0, sticky="w")
+        Checkbutton(left_frame, text="Bam", variable=self.ubroutine_Bam_var, onvalue=1).grid(row=2, column=0, sticky="w")
+        
+        # === Правое крыло (вкладки настроек) ===
         right_frame = LabelFrame(main_frame, text="Настройки программ:")
-        right_frame.place(x=self.distance_x_root / 5 + 10, y=0, height=self.distance_y_root * 2 / 3,
-                          width=self.distance_x_root * 4 / 5 - 10)
-
+        right_frame.place(
+            x=size['x'] / 5 + 10, y=0,
+            height=size['y'] * 2 / 3,
+            width=size['x'] * 4 / 5 - 10
+        )
+        
         notebook = ttk.Notebook(right_frame)
         notebook.pack(expand=True, fill=BOTH)
-
-        # создаем пару фреймвов
+        
         setings_jp = ttk.Frame(notebook)
         setings_cz = ttk.Frame(notebook)
         setings_bam = ttk.Frame(notebook)
-
-        # Пример size_set = self.create_size_se(size_set)
-        setings_jp = self.setings_jp_notebook(setings_jp)
-        setings_cz = self.setings_cz_notebook(setings_cz)
-        setings_bam = self.setings_bam_notebook(setings_bam)
-
+        
+        self._setup_jp_tab(setings_jp)
+        self._setup_cz_tab(setings_cz)
+        self._setup_bam_tab(setings_bam)
+        
         setings_jp.pack(fill=BOTH, expand=True)
         setings_cz.pack(fill=BOTH, expand=True)
         setings_bam.pack(fill=BOTH, expand=True)
-
-        # добавляем фреймы в качестве вкладок
+        
         notebook.add(setings_jp, text="Jp")
         notebook.add(setings_cz, text="Cz")
         notebook.add(setings_bam, text="Bam")
-
-        """
         
-        Низ
-        
-        """
+        # === Низ (прогресс) ===
         down_frame = LabelFrame(main_frame, text="Процесс")
-        down_frame.place(x=0, y=self.distance_y_root * 2 / 3, height=self.distance_y_root * 1 / 3,
-                         width=self.distance_x_root)
-
+        down_frame.place(
+            x=0, y=size['y'] * 2 / 3,
+            height=size['y'] * 1 / 3,
+            width=size['x']
+        )
+        
         self.progressbar = Progressbar(down_frame, orient="horizontal", variable=self.brogressbar_value_var)
         self.progressbar.place(x=5, y=0, width=785)
-
+        
         self.progresslabel = Label(down_frame, textvariable=self.progresslabel_var)
         self.progresslabel.place(x=0, y=25)
-
-        button_start = Button(down_frame, text="Начать", command=self.start_button_command)
-        button_start.place(x=self.distance_x_root - 55, y=25, width=50)
-
-        if self.start_button_var:
-            self.start_button_command()
-
+        
+        Button(down_frame, text="Начать", command=self.start_button_command).place(
+            x=size['x'] - 55, y=25, width=50
+        )
+    
+    # === Вкладка ЖП ===
+    def _setup_jp_tab(self, frame):
+        settings = self.app.get_jp_settings()
+        
+        # Путь
+        Label(frame, text="Путь:").grid(row=0, column=0)
+        entry_puth = Entry(frame, width=85)
+        entry_puth.grid(row=0, column=1)
+        entry_puth.delete(0, END)
+        entry_puth.insert(0, settings["path"])
+        
+        def button_puth_command():
+            path = updateInfoConfig(1)
+            self.app.set_jp_path(path)
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, path)
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getJPNameFile_input())
+        
+        Button(frame, text="Изменить", command=button_puth_command).grid(row=0, column=2, ipadx=5)
+        
+        # Имя
+        Label(frame, text="Имя: ").grid(row=1, column=0)
+        entry_name = Entry(frame, width=85)
+        entry_name.grid(row=1, column=1)
+        entry_name.delete(0, END)
+        entry_name.insert(0, settings["name"])
+        
+        # Количество дней
+        Label(frame, text="Количество дней отображения:").place(x=0, y=50)
+        entry_date = Entry(frame, width=3)
+        entry_date.place(x=180, y=50)
+        entry_date.delete(0, END)
+        entry_date.insert(0, settings["list_date"])
+        
+        # Настройка колонок
+        Label(frame, text="Настройка столбцов:").place(x=0, y=75)
+        
+        def label_column_command():
+            self._show_jp_columns_dialog()
+        
+        Button(frame, text="Настроить", command=label_column_command).place(x=125, y=75)
+        
+        def button_save_command():
+            self.app.set_jp_settings(
+                entry_puth.get(),
+                entry_date.get(),
+                {}  # Колонки сохраняются через диалог
+            )
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, self.app.config.getJPPathFile_input())
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getJPNameFile_input())
+            entry_date.delete(0, END)
+            entry_date.insert(0, self.app.config.getJPColumnName("Table of contents: List_date"))
+        
+        Button(frame, text="Сохранить", command=button_save_command).place(x=552, y=156)
+    
+    def _show_jp_columns_dialog(self):
+        """Диалог настройки колонок ЖП."""
+        parent = tk.Toplevel(self.root)
+        parent.title("Изменение столбцов")
+        parent.geometry("300x197")
+        parent.wm_attributes("-topmost", True)
+        
+        try:
+            icon_path = resource_path("static/icons/dirBook.ico")
+            parent.iconbitmap(icon_path)
+        except:
+            pass
+        
+        settings = self.app.get_jp_settings()
+        cols = settings["columns"]
+        
+        frame = Frame(parent)
+        frame.pack(fill=BOTH)
+        
+        entries = {}
+        fields = [
+            ("Дата:", "date", "Table of contents: Date"),
+            ("Дата выполнения::", "date_removed", "Table of contents: Date removed"),
+            ("ДСЕ:", "dse", "Table of contents: DCE"),
+            ("Вопрос принят ФИО:", "accepted_name", "Table of contents: Question accepted Full name"),
+            ("Вопрос снят ФИО:", "removed_name", "Table of contents: Question removed Full name"),
+            ("Номер:", "number", "Table of contents: Namber"),
+            ("Наименование:", "name", "Table of contents: Name"),
+            ("Перевод:", "translation", "Table of contents: Translation"),
+        ]
+        
+        for i, (label_text, key, config_key) in enumerate(fields):
+            Label(frame, text=label_text).grid(row=i, column=0, sticky="w")
+            entry = Entry(frame, width=28)
+            entry.grid(row=i, column=1)
+            entry.delete(0, END)
+            entry.insert(0, cols[key])
+            entries[config_key] = entry
+        
+        def command_save_button():
+            for config_key, entry in entries.items():
+                self.app.config.setJPColumnName(config_key, entry.get())
+            parent.destroy()
+        
+        def command_reset_button():
+            defaults = self.app.reset_jp_columns()
+            for config_key, entry in entries.items():
+                entry.delete(0, END)
+                entry.insert(0, defaults.get(config_key, ""))
+        
+        Button(frame, text="Сбросить всё", command=command_reset_button).grid(row=8, column=0, sticky="w")
+        Button(frame, text="Сохранить", command=command_save_button).grid(row=8, column=1, sticky="e")
+    
+    # === Вкладка BAM ===
+    def _setup_bam_tab(self, frame):
+        settings = self.app.get_bam_settings()
+        
+        Label(frame, text="Путь:").grid(row=0, column=0)
+        entry_puth = Entry(frame, width=85)
+        entry_puth.grid(row=0, column=1)
+        entry_puth.delete(0, END)
+        entry_puth.insert(0, settings["path"])
+        
+        def button_puth_command():
+            path = updateInfoConfig(1)
+            self.app.set_bam_path(path)
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, path)
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getBAMNameFile_input())
+        
+        Button(frame, text="Изменить", command=button_puth_command).grid(row=0, column=2, ipadx=5)
+        
+        Label(frame, text="Имя: ").grid(row=1, column=0)
+        entry_name = Entry(frame, width=85)
+        entry_name.grid(row=1, column=1)
+        entry_name.delete(0, END)
+        entry_name.insert(0, settings["name"])
+        
+        Label(frame, text="Количество дней отображения:").place(x=0, y=50)
+        entry_date = Entry(frame, width=3)
+        entry_date.place(x=180, y=50)
+        entry_date.delete(0, END)
+        entry_date.insert(0, settings["list_date"])
+        
+        Label(frame, text="Настройка столбцов:").place(x=0, y=75)
+        
+        def label_column_command():
+            self._show_bam_columns_dialog()
+        
+        Button(frame, text="Настроить", command=label_column_command).place(x=125, y=75)
+        
+        def button_save_command():
+            self.app.set_bam_settings(
+                entry_puth.get(),
+                entry_date.get(),
+                {}
+            )
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, self.app.config.getBAMPathFile_input())
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getBAMNameFile_input())
+            entry_date.delete(0, END)
+            entry_date.insert(0, self.app.config.getBAMColumnName("Table of contents: List_date"))
+        
+        Button(frame, text="Сохранить", command=button_save_command).place(x=552, y=156)
+    
+    def _show_bam_columns_dialog(self):
+        """Диалог настройки колонок BAM."""
+        parent = tk.Toplevel(self.root)
+        parent.title("Изменение столбцов")
+        parent.geometry("269x68")
+        parent.wm_attributes("-topmost", True)
+        
+        settings = self.app.get_bam_settings()
+        cols = settings["columns"]
+        
+        frame = Frame(parent)
+        frame.pack(fill=BOTH)
+        
+        Label(frame, text="Дата:").grid(row=0, column=0, sticky="w")
+        entry_Date = Entry(frame, width=28)
+        entry_Date.grid(row=0, column=1)
+        entry_Date.delete(0, END)
+        entry_Date.insert(0, cols["date"])
+        
+        Label(frame, text="Назван. листов:").grid(row=1, column=0, sticky="w")
+        entry_listes = Entry(frame, width=28)
+        entry_listes.grid(row=1, column=1)
+        entry_listes.delete(0, END)
+        entry_listes.insert(0, str(cols["listes_excel"]).replace("[", "").replace("]", ""))
+        
+        def command_save_button():
+            self.app.config.setBAMColumnName("Table of contents: Date", entry_Date.get())
+            self.app.config.setBAMColumnName("Table of contents: listes_excel", entry_listes.get().split(","))
+            parent.destroy()
+        
+        def command_reset_button():
+            defaults = self.app.reset_bam_columns()
+            entry_Date.delete(0, END)
+            entry_Date.insert(0, defaults["Table of contents: Date"])
+            entry_listes.delete(0, END)
+            entry_listes.insert(0, str(defaults["Table of contents: listes_excel"]).replace("[", "").replace("]", ""))
+        
+        Button(frame, text="Сбросить всё", command=command_reset_button).grid(row=8, column=0, sticky="w")
+        Button(frame, text="Сохранить", command=command_save_button).grid(row=8, column=1, sticky="e")
+    
+    # === Вкладка CZ ===
+    def _setup_cz_tab(self, frame):
+        settings = self.app.get_cz_settings()
+        
+        Label(frame, text="Путь:").grid(row=0, column=0)
+        entry_puth = Entry(frame, width=85)
+        entry_puth.grid(row=0, column=1)
+        entry_puth.delete(0, END)
+        entry_puth.insert(0, settings["path"])
+        
+        def button_puth_command():
+            path = updateInfoConfig(1)
+            self.app.set_cz_path(path)
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, path)
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getCzNameFile_input())
+        
+        Button(frame, text="Изменить", command=button_puth_command).grid(row=0, column=2, ipadx=5)
+        
+        Label(frame, text="Имя: ").grid(row=1, column=0)
+        entry_name = Entry(frame, width=85)
+        entry_name.grid(row=1, column=1)
+        entry_name.delete(0, END)
+        entry_name.insert(0, settings["name"])
+        
+        Label(frame, text="Количество дней отображения:").place(x=0, y=50)
+        entry_date = Entry(frame, width=3)
+        entry_date.place(x=180, y=50)
+        entry_date.delete(0, END)
+        entry_date.insert(0, settings["list_date"])
+        
+        Label(frame, text="Настройка столбцов:").place(x=0, y=75)
+        
+        def label_column_command():
+            self._show_cz_columns_dialog()
+        
+        Button(frame, text="Настроить", command=label_column_command).place(x=125, y=75)
+        
+        Label(frame, text="Настройка РЦ:").place(x=0, y=100)
+        
+        def label_rc_command():
+            self._show_cz_rc_dialog()
+        
+        Button(frame, text="Настроить", command=label_rc_command).place(x=125, y=100)
+        
+        Label(frame, text="Дополнительные листы:").place(x=0, y=126)
+        Checkbutton(frame, variable=self.dop_date_Cz_var).place(x=150, y=126)
+        
+        def button_save_command():
+            self.app.set_cz_settings(
+                entry_puth.get(),
+                entry_date.get(),
+                {},
+                {}
+            )
+            entry_puth.delete(0, END)
+            entry_puth.insert(0, self.app.config.getCzPathFile_input())
+            entry_name.delete(0, END)
+            entry_name.insert(0, self.app.config.getCzNameFile_input())
+            entry_date.delete(0, END)
+            entry_date.insert(0, self.app.config.getCzColumnName("Table of contents: List_date"))
+        
+        Button(frame, text="Сохранить", command=button_save_command).place(x=552, y=156)
+    
+    def _show_cz_columns_dialog(self):
+        """Диалог настройки колонок CZ."""
+        parent = tk.Toplevel(self.root)
+        parent.title("Изменение столбцов")
+        parent.geometry("270x173")
+        parent.wm_attributes("-topmost", True)
+        
+        settings = self.app.get_cz_settings()
+        cols = settings["columns"]
+        
+        frame = Frame(parent)
+        frame.pack(fill=BOTH)
+        
+        fields = [
+            ("Лист:", "list", "Table of contents: List"),
+            ("Подписано:", "accepted", "Table of contents: Accepted"),
+            ("ДСЕ:", "dse", "Table of contents: DCE"),
+            ("РЦ:", "rc", "Table of contents: RC"),
+            ("Закрыто:", "close", "Table of contents: Close"),
+            ("Выполнено:", "done", "Table of contents: Done"),
+            ("Наименование:", "date_writer", "Table of contents: Date writer"),
+        ]
+        
+        entries = {}
+        for i, (label_text, key, config_key) in enumerate(fields):
+            Label(frame, text=label_text).grid(row=i, column=0, sticky="w")
+            entry = Entry(frame, width=28)
+            entry.grid(row=i, column=1)
+            entry.delete(0, END)
+            entry.insert(0, cols[key])
+            entries[config_key] = entry
+        
+        def command_save_button():
+            for config_key, entry in entries.items():
+                self.app.config.setCzColumnName(config_key, entry.get())
+            parent.destroy()
+        
+        def command_reset_button():
+            defaults = self.app.reset_cz_columns()
+            for config_key, entry in entries.items():
+                entry.delete(0, END)
+                entry.insert(0, defaults.get(config_key, ""))
+        
+        Button(frame, text="Сбросить всё", command=command_reset_button).grid(row=8, column=0, sticky="w")
+        Button(frame, text="Сохранить", command=command_save_button).grid(row=8, column=1, sticky="e")
+    
+    def _show_cz_rc_dialog(self):
+        """Диалог настройки РЦ CZ."""
+        parent = tk.Toplevel(self.root)
+        parent.title("Изменение столбцов")
+        parent.geometry("326x110")
+        parent.wm_attributes("-topmost", True)
+        
+        settings = self.app.get_cz_settings()
+        rc = settings["rc_params"]
+        
+        frame = Frame(parent)
+        frame.pack(fill=BOTH)
+        
+        Label(frame, text="Если нужно несколько значений пишите через запятую").place(x=0, y=0)
+        
+        fields = [
+            ("ФОЦ:", "foc", "RC search parameters: Rc foc value"),
+            ("ТОЦ:", "toc", "RC search parameters: Rc toc value"),
+            ("ПОЦ:", "poc", "RC search parameters: Rc poc value"),
+        ]
+        
+        entries = {}
+        for i, (label_text, key, config_key) in enumerate(fields):
+            Label(frame, text=label_text).grid(row=i+1, column=0, sticky="w")
+            entry = Entry(frame, width=39)
+            entry.grid(row=i+1, column=1)
+            entry.delete(0, END)
+            entry.insert(0, str(rc[key]).replace("[", "").replace("]", ""))
+            entries[config_key] = entry
+        
+        def command_save_button():
+            for config_key, entry in entries.items():
+                self.app.config.setCzColumnName(config_key, entry.get().split(","))
+            parent.destroy()
+        
+        def command_reset_button():
+            defaults = self.app.reset_cz_rc_params()
+            for config_key, entry in entries.items():
+                entry.delete(0, END)
+                entry.insert(0, str(defaults.get(config_key, "")).replace("[", "").replace("]", ""))
+        
+        Button(frame, text="Сбросить всё", command=command_reset_button).grid(row=4, column=0, sticky="w")
+        Button(frame, text="Сохранить", command=command_save_button).grid(row=4, column=1, sticky="e")
+    
+    # === Обработчики команд ===
+    
+    def update_last_mouns(self, progress_barbar: bool = False):
+        """Обновляет данные за прошлый месяц."""
+        if progress_barbar:
+            self.brogressbar_value_var.set(0)
+            self.progressbar.update()
+            self.progresslabel_var.set("Работает...")
+        
+        def progress_callback(value):
+            self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value)
+            self.progressbar.update()
+        
+        self.app.update_last_mouns(progress_callback=progress_callback if progress_barbar else None)
+        
+        if progress_barbar:
+            self.progresslabel_var.set("Программа завершена!")
+            self.progresslabel.update()
+    
+    def start_button_command(self):
+        """Обработчик кнопки 'Начать'."""
+        # Проверка на обновление прошлого месяца
+        if int(self.app.time_and_day_now[8:10]) <= 5:
+            if messagebox.askyesno("Внимание", "Обновить данные за прошлый месяц?"):
+                self.update_last_mouns()
+                return
+        
+        self.brogressbar_value_var.set(0)
+        self.progressbar.update()
+        self.progresslabel_var.set("Работает...")
+        
+        def progress_callback(value):
+            self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value)
+            self.progressbar.update()
+        
+        def completion_callback():
+            self.progresslabel_var.set("Программа завершена!")
+            self.progresslabel.update()
+        
+        self.app.start_processing(
+            progress_callback=progress_callback,
+            completion_callback=completion_callback
+        )
+    
     def change_value_progress_bar_var(self, value_pb):
+        """Обновляет значение прогресс-бара."""
         self.brogressbar_value_var.set(self.brogressbar_value_var.get() + value_pb)
         self.progressbar.update()
-
+    
+    # === Debug mode ===
+    
     def gui_debug_mode(self):
+        """Открывает окно debug mode."""
         parent = tk.Toplevel(self.root)
         parent.title("Выбор параметров")
         parent.geometry("400x200")
-
-        # создаем набор вкладок
+        
         notebook = ttk.Notebook(parent)
         notebook.pack(expand=True, fill=BOTH)
-
-        # создаем пару фреймвов
+        
         size_set = ttk.Frame(notebook)
         frame2 = ttk.Frame(notebook)
-
-        size_set = self.create_size_se(size_set)
-
+        
+        self._setup_size_tab(size_set)
+        
         size_set.pack(fill=BOTH, expand=True, padx=5, pady=5)
         frame2.pack(fill=BOTH, expand=True)
-
-        # добавляем фреймы в качестве вкладок
+        
         notebook.add(size_set, text="Размер")
         notebook.add(frame2, text="...")
-
-        parent.mainloop()
-
-    def create_size_se(self, size_set):
-        strVarSizeX = StringVar(value=f"X: {self.config.getConfigSizeXProgram()}")
-        strVarSizeY = StringVar(value=f"Y: {self.config.getConfigSizeYProgram()}")
-
-        def button_x_command(sign: float):
-            if sign:
-                self.distance_x_root += self.modification.get()
-            else:
-                self.distance_x_root -= self.modification.get()
-            self.config.setConfigSizeXProgram(self.distance_x_root)
-            strVarSizeX.set(f"X: {self.config.getConfigSizeXProgram()}")
-            self.root.geometry(f"{self.distance_x_root}x{self.distance_y_root}")
-            self.create_gui()
-
-        def button_y_command(sign: float):
-            if sign:
-                self.distance_y_root += self.modification.get()
-            else:
-                self.distance_y_root -= self.modification.get()
-            self.config.setConfigSizeYProgram(self.distance_y_root)
-            strVarSizeY.set(f"Y: {self.config.getConfigSizeYProgram()}")
-            self.root.geometry(f"{self.distance_x_root}x{self.distance_y_root}")
-            self.create_gui()
-
+    
+    def _setup_size_tab(self, size_set):
+        """Вкладка настройки размеров окна."""
+        size = self.app.get_window_size()
+        strVarSizeX = StringVar(value=f"X: {size['x']}")
+        strVarSizeY = StringVar(value=f"Y: {size['y']}")
+        
+        def button_x_command(sign: bool):
+            new_x = self.app.modify_window_size("x", self.modification_var.get() if sign else -self.modification_var.get())
+            strVarSizeX.set(f"X: {new_x}")
+            self._refresh_window()
+        
+        def button_y_command(sign: bool):
+            new_y = self.app.modify_window_size("y", self.modification_var.get() if sign else -self.modification_var.get())
+            strVarSizeY.set(f"Y: {new_y}")
+            self._refresh_window()
+        
         def resset_command_button():
-            self.distance_x_root = int(Config.configProgram["Program:"].get("Size by X", ""))
-            self.distance_y_root = int(Config.configProgram["Program:"].get("Size by Y", ""))
-            strVarSizeX.set(f"X: {self.distance_x_root}")
-            strVarSizeY.set(f"Y: {self.distance_y_root}")
-
-            self.root.geometry(f"{self.distance_x_root}x{self.distance_y_root}")
-            self.create_gui()
-
-        button_x_revers = Button(size_set, text="-", command=lambda: button_x_command(False))
-        button_x_revers.grid(row=0, column=0)
-        label_x = Label(size_set, textvariable=strVarSizeX)
-        label_x.grid(row=0, column=1)
-        button_x = Button(size_set, text="+", command=lambda: button_x_command(True))
-        button_x.grid(row=0, column=2)
-
-        button_y_revers = Button(size_set, text="-", command=lambda: button_y_command(False))
-        button_y_revers.grid(row=1, column=0)
-        label_y = Label(size_set, textvariable=strVarSizeY)
-        label_y.grid(row=1, column=1)
-        button_y = Button(size_set, text="+", command=lambda: button_y_command(True))
-        button_y.grid(row=1, column=2)
-
-        buton_reset = Button(size_set, text="Reset", command=resset_command_button)
-        buton_reset.grid(row=3, column=0)
+            new_size = self.app.reset_window_size()
+            strVarSizeX.set(f"X: {new_size['x']}")
+            strVarSizeY.set(f"Y: {new_size['y']}")
+            self._refresh_window()
+        
+        Button(size_set, text="-", command=lambda: button_x_command(False)).grid(row=0, column=0)
+        Label(size_set, textvariable=strVarSizeX).grid(row=0, column=1)
+        Button(size_set, text="+", command=lambda: button_x_command(True)).grid(row=0, column=2)
+        
+        Button(size_set, text="-", command=lambda: button_y_command(False)).grid(row=1, column=0)
+        Label(size_set, textvariable=strVarSizeY).grid(row=1, column=1)
+        Button(size_set, text="+", command=lambda: button_y_command(True)).grid(row=1, column=2)
+        
+        Button(size_set, text="Reset", command=resset_command_button).grid(row=3, column=0)
+        
         frame_right = Frame(size_set)
         frame_right.place(x=100, y=0)
-
+        
         listmod = [1, 5, 10, 50, 100]
-
-        for i in range(len(listmod)):
-            Radiobutton(
-                frame_right,
-                value=listmod[i],
-                text=listmod[i],
-                variable=self.modification
-            ).grid(row=i, column=0, sticky="w")
-
+        for i, val in enumerate(listmod):
+            Radiobutton(frame_right, value=val, text=val, variable=self.modification_var).grid(
+                row=i, column=0, sticky="w"
+            )
+        
         return size_set
+    
+    def _refresh_window(self):
+        """Обновляет размер окна и пересоздает GUI."""
+        size = self.app.get_window_size()
+        self.root.geometry(f"{size['x']}x{size['y']}")
+        # Очистка и пересоздание
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        self._create_menu()
+        self._create_gui()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    run = Main_gui(root)
-    root.mainloop()
+    from report_conversion import ReportConversion
+    
+    app = ReportConversion()
+    
+    if app.should_open_config():
+        app.open_config_dir()
+        sys.exit()
+    
+    if app.is_no_gui_mode():
+        app.start_processing()
+    else:
+        root = tk.Tk()
+        gui = MainGUI(root, app)
+        root.mainloop()
