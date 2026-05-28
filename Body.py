@@ -584,7 +584,7 @@ class MainGUI:
             self.progressbar.update()
         
         self.app.update_last_mouns(progress_callback=progress_callback if progress_barbar else None)
-        
+
         if progress_barbar:
             self.progresslabel_var.set("Программа завершена!")
             self.progresslabel.update()

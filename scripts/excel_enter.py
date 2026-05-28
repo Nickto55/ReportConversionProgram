@@ -33,6 +33,9 @@ class ExcelWriter:
         self.fill_color3 = PatternFill(start_color="d9d9d9", fill_type="solid")
         self.fill_color4 = PatternFill(start_color="808080", fill_type="solid")
         self.fill_color5 = PatternFill(start_color="D7E4BC", fill_type="solid")
+        self.fill_color6 = PatternFill(start_color="92d050", fill_type="solid")
+        self.fill_color7 = PatternFill(start_color="0070c0", fill_type="solid")
+        self.fill_color8 = PatternFill(start_color="00b0f0", fill_type="solid")
 
         self.thin_border = Border(left=Side(style='thin'),
                                   right=Side(style='thin'),
@@ -166,6 +169,37 @@ class ExcelWriter:
                         sheet.column_dimensions[f'g'].width = 3.7
                         sheet.column_dimensions[f'h'].width = 3.7 + 7.0
                         sheet.column_dimensions[f'i'].width = 3.7 + 7.0
+
+
+                    elif self.min_prog == "Tr":
+                        max_len_row = 0
+                        for r_idx, row in enumerate(data, start=start_row):
+                            max_len_row = max(max_len_row, len(row))
+                            for c_idx, value in enumerate(row, start=start_col):
+
+                                cell = sheet.cell(row=r_idx, column=c_idx, value=value)
+                                try:
+                                    if c_idx in [3, 4]:cell.fill = PatternFill(start_color=row[-1], fill_type="solid")
+                                except:
+                                    pass
+                                if c_idx == 1:
+                                    if value == "ФОЦ": cell.fill = self.fill_color6
+                                    if value == "ПОЦ": cell.fill = self.fill_color7
+                                    if value == "ТОЦ": cell.fill = self.fill_color8
+                                    cell.font = Font(color="000000")
+                                if c_idx == 8: cell = sheet.cell(row=r_idx, column=c_idx, value="")
+                                if r_idx == 1: cell.fill = self.fill_color1; cell.font = Font(color="f2ecde")
+                                cell.border = self.thin_border
+
+                        auto_fit_columns(sheet)
+
+                        sheet.column_dimensions[f'A'].width = 5
+
+                        # Устанавливаем фильтр от первой ячейки (А1) до последней колонки первой строки
+                        sheet.auto_filter.ref = f"A1:{get_column_letter(max_len_row)}1" 
+
+
+
                     else:
                         for r_idx, row in enumerate(data, start=start_row):
                             for c_idx, value in enumerate(row, start=start_col):

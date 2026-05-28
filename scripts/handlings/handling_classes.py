@@ -1,50 +1,13 @@
+import sys
+import os
+
 from typing import Optional, List, Dict, Any
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import scripts.handlings.handling_json as handling_json
 from scripts.excel_reader import ExcelReader, MultiSheetReader
 
-
-class SearchBam:
-    """
-    Класс для работы с BAM-файлом.
-    """
-    
-    def __init__(self, sheet_name: str):
-        self.config = handling_json.JsonConfig()
-        self.reader = ExcelReader(
-            file_path=self.config.getBAMPathFile_input(),
-            sheet_name=sheet_name
-        )
-        # Автоматически фильтруем по колонке даты
-        self.reader.filter_and_save_columns(
-            self.config.getBAMColumnName("Table of contents: Date")
-        )
-    
-    def return_data(self) -> Optional[Any]:
-        """Возвращает загруженные данные."""
-        return self.reader.return_data()
-    
-    def get_dict_all_data(self) -> Dict[int, Dict[str, Any]]:
-        """Возвращает все данные в виде словаря."""
-        return self.reader.get_dict_all_data()
-    
-    def get_colum(self, get_colum: str, foc_mode: float = 0) -> List[str]:
-        """
-        Возвращает уникальные значения из указанной колонки.
-        
-        :param get_colum: имя колонки
-        :param foc_mode: режим фильтрации (0 = выключен, !=0 = включен)
-        """
-        # Условие пропуска для FOC-режима: пропускаем если колонка Date НЕ пустая
-        def skip_condition(row_data: Dict[str, Any]) -> bool:
-            date_col = self.config.getBAMColumnName("Table of contents: Date")
-            return not self.reader.is_empty(row_data.get(date_col))
-        
-        return self.reader.get_column_values(
-            get_column=get_colum,
-            foc_mode=foc_mode != 0,
-            skip_condition=skip_condition if foc_mode != 0 else None
-        )
 
 
 class SearchJP:
@@ -182,3 +145,110 @@ class SearchGe:
             reader = ExcelReader(self.file_path, sheet_name)
             return reader.return_data()
         return None
+    
+
+class SearchBam:
+    """
+    Класс для работы с BAM-файлом.
+    """
+    
+    def __init__(self, sheet_name: str):
+        self.config = handling_json.JsonConfig()
+        self.reader = ExcelReader(
+            file_path=self.config.getBAMPathFile_input(),
+            sheet_name=sheet_name
+        )
+        # Автоматически фильтруем по колонке даты
+        self.reader.filter_and_save_columns(
+            self.config.getBAMColumnName("Table of contents: Date")
+        )
+    
+    def return_data(self) -> Optional[Any]:
+        """Возвращает загруженные данные."""
+        return self.reader.return_data()
+    
+    def get_dict_all_data(self) -> Dict[int, Dict[str, Any]]:
+        """Возвращает все данные в виде словаря."""
+        return self.reader.get_dict_all_data()
+    
+    def get_colum(self, get_colum: str, foc_mode: float = 0) -> List[str]:
+        """
+        Возвращает уникальные значения из указанной колонки.
+        
+        :param get_colum: имя колонки
+        :param foc_mode: режим фильтрации (0 = выключен, !=0 = включен)
+        """
+        print(foc_mode)
+        # Условие пропуска для FOC-режима: пропускаем если колонка Date НЕ пустая
+        def skip_condition(row_data: Dict[str, Any]) -> bool:
+            date_col = self.config.getBAMColumnName("Table of contents: Date")
+            return not self.reader.is_empty(row_data.get(date_col))
+
+        
+        return self.reader.get_column_values(
+            get_column=get_colum,
+            foc_mode=foc_mode != 0,
+            skip_condition=skip_condition if foc_mode != 0 else None
+        )
+
+class SearchTrack:
+    def __init__(self, sheet_name: str):
+        self.config = handling_json.JsonConfig()
+        
+        # Получаем имя колонки D из конфига (или используем 'D' по умолчанию)
+        # Предполагается, что в конфиге есть метод для получения имени колонки D
+        if sheet_name == 'ФОЦ': column_d = 'Наименование'
+        elif sheet_name == 'ПОЦ': column_d = 'Прутковые автоматы'
+        elif sheet_name == 'ТОЦ': column_d = 'Токарные ЧПУ'
+        else:
+            print(sheet_name)
+            return
+
+        print(self.config.getBAMPathFile_input())
+        self.reader = ExcelReader(
+            file_path=self.config.getBAMPathFile_input(),
+            sheet_name=sheet_name,
+            color_filter_column=column_d,  # Фильтруем по цвету в колонке D
+            track_sheet_origin=True        # Сохраняем имя листа
+        )
+        
+        # Автоматически фильтруем по нужным колонкам
+        # __sheet_origin__ добавляется автоматически при track_sheet_origin=True
+        self.reader.filter_and_save_columns(
+            self.config.getBAMColumnName("Table of contents: DCE")
+        )
+    
+    def return_data(self) -> Optional[Any]:
+        """Возвращает загруженные данные."""
+        return self.reader.return_data()
+    
+    def get_dict_all_data(self) -> Dict[int, Dict[str, Any]]:
+        """Возвращает все данные в виде словаря."""
+        return self.reader.get_dict_all_data()
+    
+    def get_colum(self, get_colum: str, foc_mode: float = 0) -> List[str]:
+        """
+        Возвращает уникальные значения из указанной колонки.
+        """
+        # Условие пропуска для FOC-режима: пропускаем если колонка Date НЕ пустая
+        print(foc_mode)
+        def skip_condition(row_data: Dict[str, Any]) -> bool:
+            date_col = self.config.getBAMColumnName("Table of contents: Date")
+            return not self.reader.is_empty(row_data.get(date_col))
+        
+        return self.reader.get_column_values(
+            get_column=get_colum,
+            foc_mode=foc_mode != 0,
+            skip_condition=skip_condition if foc_mode != 0 else None
+        )
+    
+    def get_sheet_origin(self) -> Optional[str]:
+        """Возвращает имя листа-источника."""
+        return self.reader.sheet_origin
+    
+
+if __name__ == "__main__":
+    app = SearchTrack("ФОЦ")
+    ewhjrk =  app.get_dict_all_data()
+    # for i,k in ewhjrk.items():
+    #     print(i,k)

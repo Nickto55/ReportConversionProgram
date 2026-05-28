@@ -3,7 +3,6 @@ import calendar
 import ctypes
 import os
 import sys
-import tkinter as tk
 import webbrowser
 from datetime import datetime as dt
 from tkinter import messagebox, filedialog
@@ -18,6 +17,7 @@ from programm.program_jp import JpMain
 from programm.program_bam import BamMain
 from programm.program_cz import CzMain
 from programm.program_generalization import GeneProg
+from programm.program_for_tracking import TrackMain
 
 from scripts.handlings.handling_log import logger, attempt_recover
 
@@ -169,6 +169,10 @@ class ReportConversion:
             ge_prog = GeneProg(mask_date=self.last_mouns_last_day)
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+
+
+
+
         
         return True
     
@@ -219,6 +223,11 @@ class ReportConversion:
             ge_prog = GeneProg()
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
+
+        if self.ubroutine_Bam_var:
+            tr_prog = TrackMain()
+            excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog='Tr')
+            excelPr.write_to_sheet(tr_prog.main(), "Отслеживание")
         
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
         

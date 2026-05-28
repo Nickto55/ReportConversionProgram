@@ -1,7 +1,8 @@
 from tkinter import messagebox
-from typing import Optional, Union, List, Dict, Any
+from typing import Optional, Union, List, Dict, Any, Hashable
 
 import pandas as pd
+import openpyxl  # Добавляем для работы с цветами
 import scripts.handlings.handling_json as handling_json
 
 
@@ -11,29 +12,36 @@ class ExcelReader:
     Объединяет всю логику загрузки данных и общие операции.
     """
     
-    def __init__(self, file_path: str, sheet_name: Optional[Union[str, int]] = None):
+    def __init__(self, file_path: str, sheet_name: Optional[Union[str, int]] = None,
+                 color_filter_column: Optional[str] = None,  # Новый параметр
+                 track_sheet_origin: bool = False):           # Новый параметр
         self.file_path = file_path
         self.sheet_name = sheet_name
         self.data: Optional[pd.DataFrame] = None
         self.columns_save: List[str] = []
         self.filtered_data: Optional[Dict[int, Dict[str, Any]]] = None
+        self.color_filter_column = color_filter_column      # Сохраняем
+        self.track_sheet_origin = track_sheet_origin        # Сохраняем
+        self.sheet_origin: Optional[str] = None             # Для MultiSheetReader
         
         self.load_excel()
     
     def load_excel(self, file_path: Optional[str] = None, 
-                   sheet_name: Optional[Union[str, int]] = None) -> Optional[pd.DataFrame]:
+                   sheet_name: Optional[Union[str, int]] = None,
+                   color_filter_column: Optional[str] = None) -> Optional[pd.DataFrame]:
         """
         Загружает данные из Excel файла.
-        
-        :param file_path: путь к файлу (если None, используется self.file_path)
-        :param sheet_name: имя листа (если None, используется self.sheet_name)
-        :return: DataFrame или None в случае ошибки
         """
         path = file_path or self.file_path
         sheet = sheet_name if sheet_name is not None else self.sheet_name
+        color_col = color_filter_column or self.color_filter_column
         
         try:
-            data = pd.read_excel(path, sheet_name=sheet)
+            # Сначала читаем через openpyxl для проверки цветов
+            if color_col is not None:
+                data = self._load_with_color_filter(path, sheet, color_col)
+            else:
+                data = pd.read_excel(path, sheet_name=sheet)
             
             # Если вернулся словарь (несколько листов), берём первый
             if isinstance(data, dict):
@@ -56,12 +64,67 @@ class ExcelReader:
             if file_path is None and sheet_name is None:
                 self.data = None
             return None
+
+    def _load_with_color_filter(self, path: str, sheet: Optional[Union[str, int]],
+                                color_col: str) -> pd.DataFrame:
+        """Загружает данные с цветной фильтрацией и сохраняет цвета."""
+        wb = openpyxl.load_workbook(path, data_only=True)
+
+        if sheet is None:
+            ws = wb.active
+            self.sheet_origin = ws.title
+        elif isinstance(sheet, int):
+            ws = wb.worksheets[sheet]
+            self.sheet_origin = ws.title
+        else:
+            ws = wb[sheet]
+            self.sheet_origin = sheet
+
+        header_row = 1
+        headers = [cell.value for cell in ws[header_row]]
+
+        try:
+            col_idx = headers.index(color_col) + 1
+        except ValueError:
+            wb.close()
+            raise ValueError(f"Колонка '{color_col}' не найдена")
+
+        colored_rows = []
+        row_colors = []  # Сохраняем цвета
+
+        for row_idx in range(header_row + 1, ws.max_row + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+
+            color = None
+            has_color = False
+
+            if cell.fill and cell.fill.fgColor:
+                rgb = cell.fill.fgColor.rgb
+                if rgb and rgb not in ('00000000', 'FFFFFFFF', None):
+                    color = str(rgb)
+                    has_color = True
+
+            if has_color:
+                colored_rows.append(row_idx - header_row - 1)
+                row_colors.append(color)
+
+        wb.close()
+
+        df = pd.read_excel(path, sheet_name=sheet)
+        filtered_df = df.iloc[colored_rows].reset_index(drop=True)
+
+        # Добавляем служебные колонки
+        if self.track_sheet_origin:
+            filtered_df['__sheet_origin__'] = self.sheet_origin
+
+        # Добавляем цвета как отдельную колонку
+        filtered_df['__color_D__'] = row_colors
+
+        return filtered_df
     
     def get_dict_all_data(self) -> Dict[int, Dict[str, Any]]:
         """
         Возвращает весь словарь данных из self.data.
-        
-        :return: словарь в формате {индекс: {столбец: значение, ...}}
         """
         if self.data is None:
             print("Данные не загружены.")
@@ -78,8 +141,6 @@ class ExcelReader:
     def filter_and_save_columns(self, columns_to_save: Union[str, List[str], tuple]):
         """
         Сохраняет значения из указанных столбцов в словарь.
-        
-        :param columns_to_save: список названий колонок для сохранения
         """
         if self.data is None:
             print("Данные не загружены.")
@@ -116,12 +177,6 @@ class ExcelReader:
                           skip_condition: Optional[callable] = None) -> List[str]:
         """
         Извлекает уникальные значения из указанной колонки.
-        
-        :param get_column: имя колонки
-        :param foc_mode: если True, применяется фильтрация через skip_condition
-        :param skip_condition: функция-условие (row_data) -> bool, 
-                              возвращает True если строку нужно пропустить
-        :return: отсортированный список уникальных значений
         """
         if get_column not in self.columns_save:
             messagebox.showerror(
@@ -170,8 +225,7 @@ class ExcelReader:
     def return_data(self) -> Optional[pd.DataFrame]:
         """Возвращает загруженные данные."""
         return self.data
-
-
+    
 class MultiSheetReader:
     """
     Класс для чтения нескольких листов из одного Excel-файла.
@@ -184,9 +238,6 @@ class MultiSheetReader:
     def load_sheets(self, sheet_names: List[str]) -> Dict[str, Optional[pd.DataFrame]]:
         """
         Загружает указанные листы из Excel-файла.
-        
-        :param sheet_names: список имён листов
-        :return: словарь {имя_листа: DataFrame}
         """
         for sheet_name in sheet_names:
             try:
@@ -198,7 +249,7 @@ class MultiSheetReader:
         
         return self.sheets
     
-    def get_sheet_as_dict(self, sheet_name: str) -> Optional[Dict[int, Dict[str, Any]]]:
+    def get_sheet_as_dict(self, sheet_name: str) -> dict[Hashable, dict] | None:
         """
         Возвращает данные листа в виде словаря.
         
@@ -214,3 +265,4 @@ class MultiSheetReader:
     def get_sheet(self, sheet_name: str) -> Optional[pd.DataFrame]:
         """Возвращает DataFrame указанного листа."""
         return self.sheets.get(sheet_name)
+    
