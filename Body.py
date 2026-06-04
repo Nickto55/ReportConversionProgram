@@ -594,7 +594,7 @@ class MainGUI:
         # Проверка на обновление прошлого месяца
         if int(self.app.time_and_day_now[8:10]) <= 5:
             if messagebox.askyesno("Внимание", "Обновить данные за прошлый месяц?"):
-                self.update_last_mouns()
+                self.update_last_mouns(progress_barbar=True)
                 return
         
         self.brogressbar_value_var.set(0)

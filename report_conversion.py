@@ -8,7 +8,7 @@ from datetime import datetime as dt
 from tkinter import messagebox, filedialog
 
 import plyer
-
+import tkinter as tk
 import static.config as Config
 import scripts.excel_enter as excel_enter
 import scripts.handlings.handling_json as handling_json
@@ -170,9 +170,7 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-
-
-
+        send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
         
         return True
     
@@ -224,13 +222,15 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
+        print('======================================================')
+        print(self.ubroutine_Bam_var)
         if self.ubroutine_Bam_var:
             tr_prog = TrackMain()
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog='Tr')
             excelPr.write_to_sheet(tr_prog.main(), "Отслеживание")
-        
+
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
-        
+
         if completion_callback:
             completion_callback()
         
@@ -568,7 +568,7 @@ if __name__ == "__main__":
         app.start_processing()
     else:
         # Импортируем и запускаем GUI
-        from body import MainGUI
+        from Body import MainGUI
         import tkinter as tk
         root = tk.Tk()
         gui = MainGUI(root, app)
