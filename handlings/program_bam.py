@@ -86,7 +86,6 @@ class BamMain:
         return headers
 
     def result_creation_function(self, listes_excel):
-        # Основная логика вынесена в замыкание, чтобы можно было повторить попытку после восстановления
         def _process():
             self.search = SearchBam(listes_excel)
             self.data = self.search.get_dict_all_data()

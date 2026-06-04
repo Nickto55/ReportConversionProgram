@@ -13,11 +13,11 @@ import static.config as Config
 import scripts.excel_enter as excel_enter
 import scripts.handlings.handling_json as handling_json
 
-from programm.program_jp import JpMain
-from programm.program_bam import BamMain
-from programm.program_cz import CzMain
-from programm.program_generalization import GeneProg
-from programm.program_for_tracking import TrackMain
+from handlings.program_jp import JpMain
+from handlings.program_bam import BamMain
+from handlings.program_cz import CzMain
+from handlings.program_generalization import GeneProg
+from handlings.program_for_tracking import TrackMain
 
 from scripts.handlings.handling_log import logger, attempt_recover
 

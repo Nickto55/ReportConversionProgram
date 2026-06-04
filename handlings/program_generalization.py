@@ -414,6 +414,5 @@ class GeneProg:
 if __name__ == "__main__":
     config = JsonConfig()
 
-    # ge_prog = GeneProg(mask_date="2025-10-12")
     ge_prog = GeneProg()
     print(ge_prog.main()[10])
