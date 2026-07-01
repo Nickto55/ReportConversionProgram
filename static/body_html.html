@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Conversion Program</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --accent: #e94560;
+            --accent-hover: #ff6b6b;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --border: #2a2a4a;
+            --success: #4ecca3;
+            --warning: #f9a825;
+            --input-bg: #1a1a2e;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === Главное окно === */
+        .app-container {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            grid-template-rows: 1fr 180px;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        /* === Левая панель === */
+        .sidebar {
+            grid-row: 1;
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .sidebar-section {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 14px;
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .program-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 4px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .program-toggle:hover {
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 22px;
+            background: var(--bg-primary);
+            border-radius: 11px;
+            position: relative;
+            transition: background 0.3s;
+            border: 2px solid var(--border);
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 1px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(18px);
+        }
+
+        .program-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .info-block {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .info-block .current-time {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        /* === Основная область === */
+        .main-content {
+            grid-row: 1;
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+            background: var(--bg-primary);
+            padding: 4px 4px 0;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .tab-content {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === Формы внутри вкладок === */
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .form-label {
+            min-width: 160px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            flex: 1;
+            min-width: 200px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
+        }
+
+        .form-input.small {
+            min-width: 60px;
+            max-width: 80px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--bg-primary);
+        }
+
+        .btn-success:hover {
+            filter: brightness(1.1);
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: var(--input-bg);
+        }
+
+        .custom-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .custom-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* === Нижняя панель (Прогресс) === */
+        .bottom-panel {
+            grid-column: 1 / -1;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-status {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            width: 0%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-bar.completed {
+            background: linear-gradient(90deg, var(--success), #2ecc71);
+        }
+
+        .progress-bar.completed::after {
+            animation: none;
+        }
+
+        .bottom-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        /* === Модальные окна === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            min-width: 400px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(233, 69, 96, 0.1);
+            color: var(--accent);
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* === Меню === */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 220px;
+            right: 0;
+            height: 40px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .menu-item {
+            position: relative;
+        }
+
+        .menu-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 220px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .menu-item:hover .dropdown {
+            display: block;
+            animation: fadeIn 0.15s ease;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* === Debug Mode === */
+        .size-controls {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .size-value {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: var(--accent);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .radio-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .radio-item input {
+            accent-color: var(--accent);
+        }
+
+        /* === Toast уведомления === */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--accent);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        /* === Scrollbar === */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* === Responsive === */
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr 180px;
+            }
+
+            .sidebar {
+                grid-row: 1;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .top-bar {
+                left: 0;
+                top: auto;
+                position: relative;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast уведомления -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Верхнее меню -->
+    <div class="top-bar">
+        <div class="menu-item">
+            <button class="menu-btn">Settings ▼</button>
+            <div class="dropdown">
+                <div class="dropdown-item" onclick="openDebugModal()">Debug Mode</div>
+            </div>
+        </div>
+        <div class="menu-item">
+            <button class="menu-btn">Run ▼</button>
+            <div class="dropdown">
+                <div class="dropdown-item" onclick="updateLastMonth()">Ручной запуск обновлений прошлого месяца</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контейнер -->
+    <div class="app-container">
+        <!-- Левая панель -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Варианты программ</div>
+
+                <div class="program-toggle" onclick="toggleProgram('jp')">
+                    <div class="toggle-switch active" id="toggle-jp"></div>
+                    <span class="program-label">Jp</span>
+                </div>
+
+                <div class="program-toggle" onclick="toggleProgram('cz')">
+                    <div class="toggle-switch active" id="toggle-cz"></div>
+                    <span class="program-label">Cz</span>
+                </div>
+
+                <div class="program-toggle" onclick="toggleProgram('bam')">
+                    <div class="toggle-switch active" id="toggle-bam"></div>
+                    <span class="program-label">Bam</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Информация</div>
+                <div class="info-block">
+                    <div>Сейчас: <span class="current-time" id="currentTime">--</span></div>
+                    <div style="margin-top: 8px;">
+                        Файл изменён:<br>
+                        <span id="fileDate">--</span><br>
+                        <span id="fileTime" style="margin-left: 30px;">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная область -->
+        <div class="main-content" style="margin-top: 40px;">
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('jp')">Jp</button>
+                <button class="tab-btn" onclick="switchTab('cz')">Cz</button>
+                <button class="tab-btn" onclick="switchTab('bam')">Bam</button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Вкладка Jp -->
+                <div class="tab-panel active" id="tab-jp">
+                    <div class="form-row">
+                        <label class="form-label">Путь:</label>
+                        <input type="text" class="form-input" id="jp-path" value="">
+                        <button class="btn btn-secondary" onclick="changePath('jp')">Изменить</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Имя:</label>
+                        <input type="text" class="form-input" id="jp-name" value="">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Количество дней отображения:</label>
+                        <input type="text" class="form-input small" id="jp-days" value="1">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Настройка столбцов:</label>
+                        <button class="btn btn-secondary" onclick="openColumnsDialog('jp')">Настроить</button>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="form-row" style="justify-content: flex-end;">
+                        <button class="btn btn-success" onclick="saveJpSettings()">Сохранить</button>
+                    </div>
+                </div>
+
+                <!-- Вкладка Cz -->
+                <div class="tab-panel" id="tab-cz">
+                    <div class="form-row">
+                        <label class="form-label">Путь:</label>
+                        <input type="text" class="form-input" id="cz-path" value="">
+                        <button class="btn btn-secondary" onclick="changePath('cz')">Изменить</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Имя:</label>
+                        <input type="text" class="form-input" id="cz-name" value="">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Количество дней отображения:</label>
+                        <input type="text" class="form-input small" id="cz-days" value="1">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Настройка столбцов:</label>
+                        <button class="btn btn-secondary" onclick="openColumnsDialog('cz')">Настроить</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Настройка РЦ:</label>
+                        <button class="btn btn-secondary" onclick="openRcDialog()">Настроить</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Дополнительные листы:</label>
+                        <div class="checkbox-row" onclick="toggleCheckbox(this)">
+                            <div class="custom-checkbox" id="cz-dop-sheets"></div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="form-row" style="justify-content: flex-end;">
+                        <button class="btn btn-success" onclick="saveCzSettings()">Сохранить</button>
+                    </div>
+                </div>
+
+                <!-- Вкладка Bam -->
+                <div class="tab-panel" id="tab-bam">
+                    <div class="form-row">
+                        <label class="form-label">Путь:</label>
+                        <input type="text" class="form-input" id="bam-path" value="">
+                        <button class="btn btn-secondary" onclick="changePath('bam')">Изменить</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Имя:</label>
+                        <input type="text" class="form-input" id="bam-name" value="">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Количество дней отображения:</label>
+                        <input type="text" class="form-input small" id="bam-days" value="1">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Настройка столбцов:</label>
+                        <button class="btn btn-secondary" onclick="openColumnsDialog('bam')">Настроить</button>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div class="form-row" style="justify-content: flex-end;">
+                        <button class="btn btn-success" onclick="saveBamSettings()">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижняя панель -->
+        <div class="bottom-panel">
+            <div class="progress-header">
+                <span class="progress-title">Процесс</span>
+                <span class="progress-status" id="progressStatus">Готово</span>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="bottom-actions">
+                <span id="progressDetail" style="font-size: 12px; color: var(--text-secondary);"></span>
+                <button class="btn btn-primary" id="startBtn" onclick="startProcessing()">
+                    <span>▶</span> Начать
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Настройка столбцов Jp -->
+    <div class="modal-overlay" id="modal-jp-columns">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Изменение столбцов Jp</span>
+                <button class="modal-close" onclick="closeModal('modal-jp-columns')">×</button>
+            </div>
+            <div class="modal-body" id="jp-columns-body">
+                <!-- Динамически заполняется -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resetJpColumns()">Сбросить всё</button>
+                <button class="btn btn-success" onclick="saveJpColumns()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Настройка столбцов Cz -->
+    <div class="modal-overlay" id="modal-cz-columns">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Изменение столбцов Cz</span>
+                <button class="modal-close" onclick="closeModal('modal-cz-columns')">×</button>
+            </div>
+            <div class="modal-body" id="cz-columns-body">
+                <!-- Динамически заполняется -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resetCzColumns()">Сбросить всё</button>
+                <button class="btn btn-success" onclick="saveCzColumns()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Настройка столбцов Bam -->
+    <div class="modal-overlay" id="modal-bam-columns">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Изменение столбцов Bam</span>
+                <button class="modal-close" onclick="closeModal('modal-bam-columns')">×</button>
+            </div>
+            <div class="modal-body" id="bam-columns-body">
+                <!-- Динамически заполняется -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resetBamColumns()">Сбросить всё</button>
+                <button class="btn btn-success" onclick="saveBamColumns()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Настройка РЦ Cz -->
+    <div class="modal-overlay" id="modal-cz-rc">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Настройка РЦ Cz</span>
+                <button class="modal-close" onclick="closeModal('modal-cz-rc')">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 12px; color: var(--warning); margin-bottom: 12px;">
+                    Если нужно несколько значений пишите через запятую
+                </div>
+                <div id="cz-rc-body">
+                    <!-- Динамически заполняется -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="resetCzRc()">Сбросить всё</button>
+                <button class="btn btn-success" onclick="saveCzRc()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Debug Mode -->
+    <div class="modal-overlay" id="modal-debug">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Debug Mode — Размер окна</span>
+                <button class="modal-close" onclick="closeModal('modal-debug')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="size-controls">
+                    <button class="btn btn-secondary" onclick="modifySize('x', -1)">−</button>
+                    <span class="size-value" id="sizeX">X: 800</span>
+                    <button class="btn btn-secondary" onclick="modifySize('x', 1)">+</button>
+                </div>
+
+                <div class="size-controls">
+                    <button class="btn btn-secondary" onclick="modifySize('y', -1)">−</button>
+                    <span class="size-value" id="sizeY">Y: 600</span>
+                    <button class="btn btn-secondary" onclick="modifySize('y', 1)">+</button>
+                </div>
+
+                <div class="radio-group" style="margin-top: 16px;">
+                    <label class="radio-item">
+                        <input type="radio" name="step" value="1" checked> 1
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="step" value="5"> 5
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="step" value="10"> 10
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="step" value="50"> 50
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="step" value="100"> 100
+                    </label>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top: 16px; width: 100%;" onclick="resetSize()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Восстановление данных -->
+    <div class="modal-overlay" id="modal-recovery">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Необходимо ввести данные</span>
+                <button class="modal-close" onclick="closeModal('modal-recovery')">×</button>
+            </div>
+            <div class="modal-body" id="recovery-body">
+                <!-- Динамически заполняется -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-recovery')">Отмена</button>
+                <button class="btn btn-success" onclick="saveRecoveryData()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === Состояние приложения ===
+        const appState = {
+            programs: { jp: true, cz: true, bam: true },
+            czDopSheets: false,
+            windowSize: { x: 800, y: 600 },
+            modificationStep: 1,
+            progress: 0,
+            isProcessing: false,
+
+            // Данные настроек (загружаются с бэкенда)
+            jp: {
+                path: '',
+                name: '',
+                days: 1,
+                columns: {
+                    date: 'Дата',
+                    date_removed: 'Дата выполнения',
+                    dse: 'ДСЕ',
+                    accepted_name: 'Вопрос принят ФИО',
+                    removed_name: 'Вопрос снят ФИО',
+                    number: 'Номер',
+                    name: 'Наименование',
+                    translation: 'Перевод'
+                }
+            },
+            cz: {
+                path: '',
+                name: '',
+                days: 1,
+                columns: {
+                    list: 'Лист',
+                    accepted: 'Подписано',
+                    dse: 'ДСЕ',
+                    rc: 'РЦ',
+                    close: 'Закрыто',
+                    done: 'Выполнено',
+                    date_writer: 'Наименование'
+                },
+                rcParams: {
+                    foc: ['ФОЦ'],
+                    toc: ['ТОЦ'],
+                    poc: ['ПОЦ']
+                }
+            },
+            bam: {
+                path: '',
+                name: '',
+                days: 1,
+                columns: {
+                    date: 'Дата',
+                    listes_excel: ['Лист1', 'Лист2']
+                }
+            }
+        };
+
+        // === Инициализация ===
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            loadSettings();
+            checkStartupData();
+        });
+
+        // === Время ===
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleString('ru-RU');
+        }
+
+        // === Вкладки ===
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        // === Тогглы программ ===
+        function toggleProgram(program) {
+            appState.programs[program] = !appState.programs[program];
+            const toggle = document.getElementById(`toggle-${program}`);
+            toggle.classList.toggle('active', appState.programs[program]);
+
+            // Здесь вызываем API: app.set_jp_enabled(), app.set_cz_enabled() и т.д.
+            console.log(`Program ${program} enabled:`, appState.programs[program]);
+        }
+
+        // === Чекбокс ===
+        function toggleCheckbox(element) {
+            const checkbox = element.querySelector('.custom-checkbox');
+            checkbox.classList.toggle('checked');
+            appState.czDopSheets = checkbox.classList.contains('checked');
+            // app.set_cz_dop_date(appState.czDopSheets);
+        }
+
+        // === Пути ===
+        function changePath(program) {
+            // В реальном приложении: открыть диалог выбора папки
+            // const path = await eel.updateInfoConfig(1)();
+            const path = prompt('Введите путь:', appState[program].path);
+            if (path) {
+                appState[program].path = path;
+                document.getElementById(`${program}-path`).value = path;
+            }
+        }
+
+        // === Модальные окна ===
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // === Диалоги столбцов ===
+        function openColumnsDialog(program) {
+            const modalId = `modal-${program}-columns`;
+            const bodyId = `${program}-columns-body`;
+            const body = document.getElementById(bodyId);
+            body.innerHTML = '';
+
+            const columns = appState[program].columns;
+
+            Object.entries(columns).forEach(([key, value]) => {
+                const row = document.createElement('div');
+                row.className = 'form-row';
+                row.innerHTML = `
+                    <label class="form-label" style="min-width: 180px;">${key}:</label>
+                    <input type="text" class="form-input" id="col-${program}-${key}" value="${Array.isArray(value) ? value.join(', ') : value}">
+                `;
+                body.appendChild(row);
+            });
+
+            openModal(modalId);
+        }
+
+        function saveJpColumns() {
+            const inputs = document.querySelectorAll('#jp-columns-body input');
+            inputs.forEach(input => {
+                const key = input.id.replace('col-jp-', '');
+                appState.jp.columns[key] = input.value;
+            });
+            closeModal('modal-jp-columns');
+            showToast('Столбцы Jp сохранены', 'success');
+        }
+
+        function saveCzColumns() {
+            const inputs = document.querySelectorAll('#cz-columns-body input');
+            inputs.forEach(input => {
+                const key = input.id.replace('col-cz-', '');
+                appState.cz.columns[key] = input.value;
+            });
+            closeModal('modal-cz-columns');
+            showToast('Столбцы Cz сохранены', 'success');
+        }
+
+        function saveBamColumns() {
+            const inputs = document.querySelectorAll('#bam-columns-body input');
+            inputs.forEach(input => {
+                const key = input.id.replace('col-bam-', '');
+                const value = input.value;
+                appState.bam.columns[key] = key === 'listes_excel' ? value.split(',').map(s => s.trim()) : value;
+            });
+            closeModal('modal-bam-columns');
+            showToast('Столбцы Bam сохранены', 'success');
+        }
+
+        function resetJpColumns() {
+            // app.reset_jp_columns();
+            showToast('Столбцы Jp сброшены', 'warning');
+        }
+
+        function resetCzColumns() {
+            // app.reset_cz_columns();
+            showToast('Столбцы Cz сброшены', 'warning');
+        }
+
+        function resetBamColumns() {
+            // app.reset_bam_columns();
+            showToast('Столбцы Bam сброшены', 'warning');
+        }
+
+        // === Диалог РЦ ===
+        function openRcDialog() {
+            const body = document.getElementById('cz-rc-body');
+            body.innerHTML = '';
+
+            Object.entries(appState.cz.rcParams).forEach(([key, values]) => {
+                const row = document.createElement('div');
+                row.className = 'form-row';
+                row.innerHTML = `
+                    <label class="form-label" style="min-width: 100px;">${key.toUpperCase()}:</label>
+                    <input type="text" class="form-input" id="rc-${key}" value="${values.join(', ')}">
+                `;
+                body.appendChild(row);
+            });
+
+            openModal('modal-cz-rc');
+        }
+
+        function saveCzRc() {
+            Object.keys(appState.cz.rcParams).forEach(key => {
+                const input = document.getElementById(`rc-${key}`);
+                appState.cz.rcParams[key] = input.value.split(',').map(s => s.trim());
+            });
+            closeModal('modal-cz-rc');
+            showToast('РЦ параметры сохранены', 'success');
+        }
+
+        function resetCzRc() {
+            // app.reset_cz_rc_params();
+            showToast('РЦ параметры сброшены', 'warning');
+        }
+
+        // === Сохранение настроек ===
+        function saveJpSettings() {
+            appState.jp.path = document.getElementById('jp-path').value;
+            appState.jp.days = document.getElementById('jp-days').value;
+            // app.set_jp_settings(path, days, {});
+            showToast('Настройки Jp сохранены', 'success');
+        }
+
+        function saveCzSettings() {
+            appState.cz.path = document.getElementById('cz-path').value;
+            appState.cz.days = document.getElementById('cz-days').value;
+            // app.set_cz_settings(path, days, {}, {});
+            showToast('Настройки Cz сохранены', 'success');
+        }
+
+        function saveBamSettings() {
+            appState.bam.path = document.getElementById('bam-path').value;
+            appState.bam.days = document.getElementById('bam-days').value;
+            // app.set_bam_settings(path, days, {});
+            showToast('Настройки Bam сохранены', 'success');
+        }
+
+        // === Загрузка настроек ===
+        function loadSettings() {
+            // Здесь загрузка с бэкенда
+            // const settings = await app.get_jp_settings();
+
+            document.getElementById('jp-path').value = appState.jp.path;
+            document.getElementById('jp-name').value = appState.jp.name;
+            document.getElementById('jp-days').value = appState.jp.days;
+
+            document.getElementById('cz-path').value = appState.cz.path;
+            document.getElementById('cz-name').value = appState.cz.name;
+            document.getElementById('cz-days').value = appState.cz.days;
+
+            document.getElementById('bam-path').value = appState.bam.path;
+            document.getElementById('bam-name').value = appState.bam.name;
+            document.getElementById('bam-days').value = appState.bam.days;
+        }
+
+        // === Проверка при старте ===
+        function checkStartupData() {
+            // const result = app.checking_data_inputs();
+            // if (result.error === 'structure_mismatch') {
+            //     showToast('Структура файла конфига нарушена. Удалите текущий файл конфига', 'error');
+            // } else if (result.error === 'missing_values') {
+            //     showRecoveryDialog(result.data);
+            // }
+        }
+
+        function showRecoveryDialog(data) {
+            const body = document.getElementById('recovery-body');
+            body.innerHTML = '';
+
+            Object.entries(data).forEach(([key, values]) => {
+                values.forEach(value => {
+                    const row = document.createElement('div');
+                    row.className = 'form-row';
+                    row.innerHTML = `
+                        <label class="form-label">${value} для ${key}:</label>
+                        <input type="text" class="form-input" id="rec-${key}-${value}">
+                    `;
+                    body.appendChild(row);
+                });
+            });
+
+            openModal('modal-recovery');
+        }
+
+        function saveRecoveryData() {
+            closeModal('modal-recovery');
+            showToast('Данные сохранены', 'success');
+        }
+
+        // === Прогресс и обработка ===
+        function startProcessing() {
+            if (appState.isProcessing) return;
+
+            // Проверка на обновление прошлого месяца (1-5 число)
+            const day = new Date().getDate();
+            if (day <= 5) {
+                if (!confirm('Обновить данные за прошлый месяц?')) {
+                    return;
+                }
+                updateLastMonth();
+            }
+
+            appState.isProcessing = true;
+            appState.progress = 0;
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Работает...';
+
+            document.getElementById('progressStatus').textContent = 'Работает...';
+            document.getElementById('progressBar').classList.remove('completed');
+
+            // Имитация прогресса (в реальности — callback от бэкенда)
+            const interval = setInterval(() => {
+                appState.progress += Math.random() * 15;
+                if (appState.progress >= 100) {
+                    appState.progress = 100;
+                    clearInterval(interval);
+                    completeProcessing();
+                }
+                updateProgressBar();
+            }, 300);
+
+            // app.start_processing(progress_callback, completion_callback);
+        }
+
+        function updateProgressBar() {
+            const bar = document.getElementById('progressBar');
+            bar.style.width = appState.progress + '%';
+            document.getElementById('progressDetail').textContent = `${Math.round(appState.progress)}%`;
+        }
+
+        function completeProcessing() {
+            appState.isProcessing = false;
+            const btn = document.getElementById('startBtn');
+            btn.disabled = false;
+            btn.innerHTML = '<span>▶</span> Начать';
+
+            document.getElementById('progressStatus').textContent = 'Программа завершена!';
+            document.getElementById('progressBar').classList.add('completed');
+            showToast('Обработка завершена!', 'success');
+        }
+
+        function updateLastMonth() {
+            appState.progress = 0;
+            document.getElementById('progressStatus').textContent = 'Обновление прошлого месяца...';
+            document.getElementById('progressBar').classList.remove('completed');
+
+            const interval = setInterval(() => {
+                appState.progress += Math.random() * 20;
+                if (appState.progress >= 100) {
+                    appState.progress = 100;
+                    clearInterval(interval);
+                    document.getElementById('progressStatus').textContent = 'Готово';
+                    showToast('Данные прошлого месяца обновлены', 'success');
+                }
+                updateProgressBar();
+            }, 200);
+
+            // app.update_last_mouns(progress_callback);
+        }
+
+        // === Debug Mode ===
+        function openDebugModal() {
+            document.getElementById('sizeX').textContent = `X: ${appState.windowSize.x}`;
+            document.getElementById('sizeY').textContent = `Y: ${appState.windowSize.y}`;
+            openModal('modal-debug');
+        }
+
+        function getStep() {
+            return parseInt(document.querySelector('input[name="step"]:checked').value);
+        }
+
+        function modifySize(axis, sign) {
+            const step = getStep() * sign;
+            appState.windowSize[axis] += step;
+            document.getElementById(`size${axis.toUpperCase()}`).textContent =
+                `${axis.toUpperCase()}: ${appState.windowSize[axis]}`;
+            // app.modify_window_size(axis, step);
+        }
+
+        function resetSize() {
+            appState.windowSize = { x: 800, y: 600 };
+            document.getElementById('sizeX').textContent = 'X: 800';
+            document.getElementById('sizeY').textContent = 'Y: 600';
+            // app.reset_window_size();
+        }
+
+        // === Toast уведомления ===
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icons = {
+                error: '⚠️',
+                success: '✅',
+                warning: '⚡',
+                info: 'ℹ️'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // === Закрытие модалок по Escape ===
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
+        // === Закрытие по клику вне модалки ===
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
