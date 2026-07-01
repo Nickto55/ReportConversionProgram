@@ -8,3 +8,4 @@ webview.create_window(
 )
 webview.start()
 
+Tap the link to view your conversation with Kimi https://www.kimi.com/share/19f1d943-b712-8f29-8000-0000c1134aeb
