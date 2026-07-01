@@ -357,6 +357,7 @@ class JsonConfig:
 
     def getBAMColumnName(self, columnName: str, intOrlist: int = 0):
         data = self.data["BAM"]
+        print(data)
         if intOrlist:
             return data.get(columnName, "")
         return str(data.get(columnName, ""))

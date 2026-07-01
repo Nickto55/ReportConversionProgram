@@ -170,7 +170,7 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-        send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
+        send_notification("Обновление прошло успешно", "Обновление прошлого месяца завершено. \n Не открывайте файл, Начало работы основной программы", 10)
         
         return True
     
@@ -568,7 +568,7 @@ if __name__ == "__main__":
         app.start_processing()
     else:
         # Импортируем и запускаем GUI
-        from Body import MainGUI
+        from body import MainGUI
         import tkinter as tk
         root = tk.Tk()
         gui = MainGUI(root, app)

@@ -102,8 +102,12 @@ class BamMain:
             i_sort_last = ""
             try:
                 i_sort_last = self.headers[-1]
-            except Exception:
+            except Exception as err:
                 if not self.error_masage_var:
+                    print('___________ERROR__________________',err,'______________________________',sep="\n")
+                    for i,ii in self.data.items():
+                        print(i,ii)
+
                     messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
                     self.error_masage_var = True
                     return ["ПУСТО"]
