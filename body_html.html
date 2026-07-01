@@ -3,28 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Conversion Program</title>
+    <title>Good Morning</title>
+    <link rel="icon" type="image/png" href="static\icons\png\app_icon.png">
     <style>
         :root {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-tertiary: #0f3460;
-            --accent: #e94560;
-            --accent-hover: #ff6b6b;
-            --text-primary: #eee;
-            --text-secondary: #aaa;
-            --border: #2a2a4a;
-            --success: #4ecca3;
-            --warning: #f9a825;
-            --input-bg: #1a1a2e;
-            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-light: #dbeafe;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
@@ -37,11 +49,11 @@
         /* === Главное окно === */
         .app-container {
             display: grid;
-            grid-template-columns: 220px 1fr;
-            grid-template-rows: 1fr 180px;
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 1fr 160px;
             height: 100vh;
-            gap: 1px;
-            background: var(--border);
+            gap: 0;
+            background: var(--bg-primary);
         }
 
         /* === Левая панель === */
@@ -50,143 +62,199 @@
             background: var(--bg-secondary);
             display: flex;
             flex-direction: column;
-            padding: 16px;
+            padding: 20px 16px;
+            gap: 16px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
             gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .logo-section img {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+        }
+
+        .logo-section h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.5px;
         }
 
         .sidebar-section {
             background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 14px;
-            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid var(--border-light);
         }
 
         .sidebar-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
         }
 
         .program-toggle {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 4px;
+            gap: 12px;
+            padding: 10px 8px;
             cursor: pointer;
-            border-radius: 8px;
-            transition: background 0.2s;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
         }
 
         .program-toggle:hover {
-            background: rgba(233, 69, 96, 0.1);
+            background: var(--accent-light);
         }
 
         .toggle-switch {
-            width: 40px;
-            height: 22px;
-            background: var(--bg-primary);
-            border-radius: 11px;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
             position: relative;
-            transition: background 0.3s;
-            border: 2px solid var(--border);
+            transition: background 0.3s ease;
+            flex-shrink: 0;
         }
 
         .toggle-switch.active {
             background: var(--accent);
-            border-color: var(--accent);
         }
 
         .toggle-switch::after {
             content: '';
             position: absolute;
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             background: white;
             border-radius: 50%;
-            top: 1px;
-            left: 2px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
         }
 
         .toggle-switch.active::after {
-            transform: translateX(18px);
+            transform: translateX(20px);
         }
 
         .program-label {
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .info-block {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
-        .info-block .current-time {
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            font-size: 14px;
+            width: 18px;
+            text-align: center;
+        }
+
+        .info-value {
             color: var(--text-primary);
-            font-weight: 500;
-            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .info-time {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
         }
 
         /* === Основная область === */
         .main-content {
             grid-row: 1;
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             display: flex;
             flex-direction: column;
-            padding: 16px;
+            padding: 20px 24px 16px;
+            overflow: hidden;
         }
 
         .tabs-header {
             display: flex;
-            gap: 4px;
+            gap: 0;
             margin-bottom: 0;
-            background: var(--bg-primary);
+            background: var(--bg-secondary);
             padding: 4px 4px 0;
-            border-radius: 12px 12px 0 0;
+            border-radius: var(--radius) var(--radius) 0 0;
             border: 1px solid var(--border);
             border-bottom: none;
         }
 
         .tab-btn {
-            padding: 12px 24px;
+            padding: 12px 28px;
             background: transparent;
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.2s;
+            font-weight: 600;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            transition: all 0.2s ease;
             position: relative;
         }
 
         .tab-btn:hover {
             color: var(--text-primary);
-            background: rgba(233, 69, 96, 0.1);
+            background: var(--bg-tertiary);
         }
 
         .tab-btn.active {
             color: var(--accent);
-            background: var(--bg-secondary);
-            border-bottom: 2px solid var(--accent);
+            background: var(--bg-card);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 12px;
+            right: 12px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 2px 2px 0 0;
         }
 
         .tab-content {
             flex: 1;
-            background: var(--bg-tertiary);
+            background: var(--bg-card);
             border: 1px solid var(--border);
             border-top: none;
-            border-radius: 0 0 12px 12px;
-            padding: 24px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 28px 32px;
             overflow-y: auto;
+            box-shadow: var(--shadow);
         }
 
         .tab-panel {
@@ -199,7 +267,7 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -207,90 +275,97 @@
         .form-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
         }
 
         .form-label {
-            min-width: 160px;
+            min-width: 200px;
             font-size: 13px;
             color: var(--text-secondary);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .form-input {
             flex: 1;
             min-width: 200px;
-            background: var(--input-bg);
-            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            border: 1.5px solid var(--border);
             color: var(--text-primary);
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 13px;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.2s ease;
         }
 
         .form-input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
+            box-shadow: 0 0 0 3px var(--accent-light);
         }
 
         .form-input.small {
             min-width: 60px;
             max-width: 80px;
             text-align: center;
+            flex: 0;
         }
 
         .btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s;
+            font-weight: 600;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            white-space: nowrap;
         }
 
         .btn-primary {
             background: var(--accent);
             color: white;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
         .btn-primary:hover {
             background: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .btn-secondary {
-            background: var(--bg-primary);
+            background: var(--bg-tertiary);
             color: var(--text-secondary);
-            border: 1px solid var(--border);
+            border: 1.5px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-primary);
             color: var(--text-primary);
+            border-color: var(--accent);
         }
 
         .btn-success {
             background: var(--success);
-            color: var(--bg-primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
         }
 
         .btn-success:hover {
-            filter: brightness(1.1);
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .section-divider {
             height: 1px;
-            background: var(--border);
-            margin: 20px 0;
+            background: var(--border-light);
+            margin: 24px 0;
         }
 
         .checkbox-row {
@@ -298,18 +373,26 @@
             align-items: center;
             gap: 10px;
             cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+
+        .checkbox-row:hover {
+            background: var(--bg-tertiary);
         }
 
         .custom-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border: 2px solid var(--border);
-            border-radius: 4px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-            background: var(--input-bg);
+            transition: all 0.2s ease;
+            background: var(--bg-primary);
+            flex-shrink: 0;
         }
 
         .custom-checkbox.checked {
@@ -318,21 +401,28 @@
         }
 
         .custom-checkbox.checked::after {
-            content: '✓';
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
+            content: '';
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
         }
 
-        /* === Нижняя панель (Прогресс) === */
+        /* === Нижняя панель (Прогресс) — ФИКСИРОВАННАЯ === */
         .bottom-panel {
             grid-column: 1 / -1;
             background: var(--bg-secondary);
             border-top: 1px solid var(--border);
-            padding: 20px 24px;
+            padding: 16px 24px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
+            height: 160px;
+            flex-shrink: 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
+            z-index: 10;
         }
 
         .progress-header {
@@ -342,32 +432,58 @@
         }
 
         .progress-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .progress-status {
             font-size: 13px;
             color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.working {
+            background: var(--warning);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .progress-bar-container {
             width: 100%;
-            height: 8px;
-            background: var(--bg-primary);
-            border-radius: 4px;
+            height: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
             overflow: hidden;
             position: relative;
+            border: 1px solid var(--border-light);
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-            border-radius: 4px;
-            transition: width 0.4s ease;
+            background: linear-gradient(90deg, var(--accent), #3b82f6);
+            border-radius: 5px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             width: 0%;
             position: relative;
             overflow: hidden;
@@ -380,8 +496,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            animation: shimmer 1.5s infinite;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
         }
 
         @keyframes shimmer {
@@ -390,7 +506,7 @@
         }
 
         .progress-bar.completed {
-            background: linear-gradient(90deg, var(--success), #2ecc71);
+            background: linear-gradient(90deg, var(--success), #34d399);
         }
 
         .progress-bar.completed::after {
@@ -401,7 +517,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 8px;
+            margin-top: 4px;
+        }
+
+        .progress-detail {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-family: 'SF Mono', monospace;
         }
 
         /* === Модальные окна === */
@@ -412,8 +535,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(6px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -427,13 +550,13 @@
         .modal {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: var(--radius);
             padding: 24px;
-            min-width: 400px;
-            max-width: 600px;
+            min-width: 420px;
+            max-width: 640px;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
         }
 
         .modal-header {
@@ -441,40 +564,43 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-light);
         }
 
         .modal-title {
             font-size: 18px;
-            font-weight: 600;
-            color: var(--accent);
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .modal-close {
             background: none;
             border: none;
-            color: var(--text-secondary);
-            font-size: 24px;
+            color: var(--text-muted);
+            font-size: 22px;
             cursor: pointer;
             width: 32px;
             height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
 
         .modal-close:hover {
-            background: rgba(233, 69, 96, 0.1);
-            color: var(--accent);
+            background: var(--error-light);
+            color: var(--error);
         }
 
         .modal-body {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
         .modal-footer {
@@ -483,21 +609,21 @@
             gap: 10px;
             margin-top: 20px;
             padding-top: 16px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--border-light);
         }
 
         /* === Меню === */
         .top-bar {
             position: absolute;
             top: 0;
-            left: 220px;
+            left: 240px;
             right: 0;
-            height: 40px;
-            background: var(--bg-primary);
+            height: 48px;
+            background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            padding: 0 20px;
             gap: 4px;
             z-index: 10;
         }
@@ -507,14 +633,18 @@
         }
 
         .menu-btn {
-            padding: 6px 14px;
+            padding: 8px 16px;
             background: transparent;
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 13px;
-            border-radius: 6px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .menu-btn:hover {
@@ -525,13 +655,13 @@
         .dropdown {
             display: none;
             position: absolute;
-            top: 100%;
+            top: calc(100% + 4px);
             left: 0;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            min-width: 220px;
-            box-shadow: var(--shadow);
+            border-radius: var(--radius-sm);
+            min-width: 260px;
+            box-shadow: var(--shadow-lg);
             z-index: 100;
             overflow: hidden;
         }
@@ -547,7 +677,8 @@
             font-size: 13px;
             color: var(--text-secondary);
             transition: all 0.2s;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-light);
+            font-weight: 500;
         }
 
         .dropdown-item:last-child {
@@ -555,8 +686,8 @@
         }
 
         .dropdown-item:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
+            background: var(--accent-light);
+            color: var(--accent);
         }
 
         /* === Debug Mode === */
@@ -569,11 +700,14 @@
         }
 
         .size-value {
-            font-family: 'Courier New', monospace;
+            font-family: 'SF Mono', monospace;
             font-size: 16px;
             color: var(--accent);
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
         }
 
         .radio-group {
@@ -585,11 +719,14 @@
         .radio-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
             transition: background 0.2s;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
         }
 
         .radio-item:hover {
@@ -608,24 +745,24 @@
             z-index: 2000;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .toast {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius);
             padding: 14px 20px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
             gap: 12px;
             animation: slideIn 0.3s ease;
-            max-width: 400px;
+            max-width: 420px;
         }
 
         .toast.error {
-            border-left: 4px solid var(--accent);
+            border-left: 4px solid var(--error);
         }
 
         .toast.success {
@@ -636,6 +773,10 @@
             border-left: 4px solid var(--warning);
         }
 
+        .toast.info {
+            border-left: 4px solid var(--accent);
+        }
+
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -643,11 +784,14 @@
 
         .toast-icon {
             font-size: 20px;
+            flex-shrink: 0;
         }
 
         .toast-message {
             font-size: 13px;
             color: var(--text-primary);
+            font-weight: 500;
+            line-height: 1.4;
         }
 
         /* === Scrollbar === */
@@ -657,38 +801,62 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
+            background: var(--border);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent);
+            background: var(--text-muted);
         }
 
         /* === Responsive === */
         @media (max-width: 900px) {
             .app-container {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr 180px;
+                grid-template-rows: auto 1fr 160px;
             }
 
             .sidebar {
                 grid-row: 1;
                 flex-direction: row;
                 flex-wrap: wrap;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
             }
 
             .top-bar {
                 left: 0;
-                top: auto;
                 position: relative;
             }
         }
+
+        /* === Badge === */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-blue {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .badge-green {
+            background: var(--success-light);
+            color: var(--success);
+        }
     </style>
+<base target="_blank">
 </head>
 <body>
     <!-- Toast уведомления -->
@@ -697,13 +865,13 @@
     <!-- Верхнее меню -->
     <div class="top-bar">
         <div class="menu-item">
-            <button class="menu-btn">Settings ▼</button>
+            <button class="menu-btn">Settings </button>
             <div class="dropdown">
                 <div class="dropdown-item" onclick="openDebugModal()">Debug Mode</div>
             </div>
         </div>
         <div class="menu-item">
-            <button class="menu-btn">Run ▼</button>
+            <button class="menu-btn">Run</button>
             <div class="dropdown">
                 <div class="dropdown-item" onclick="updateLastMonth()">Ручной запуск обновлений прошлого месяца</div>
             </div>
@@ -714,6 +882,11 @@
     <div class="app-container">
         <!-- Левая панель -->
         <div class="sidebar">
+            <div class="logo-section">
+                <img src="static\icons\png\app_icon.png" alt="Good Morning">
+                <h1>Good Morning</h1>
+            </div>
+
             <div class="sidebar-section">
                 <div class="sidebar-title">Варианты программ</div>
 
@@ -736,18 +909,18 @@
             <div class="sidebar-section">
                 <div class="sidebar-title">Информация</div>
                 <div class="info-block">
-                    <div>Сейчас: <span class="current-time" id="currentTime">--</span></div>
-                    <div style="margin-top: 8px;">
-                        Файл изменён:<br>
-                        <span id="fileDate">--</span><br>
-                        <span id="fileTime" style="margin-left: 30px;">--</span>
+                    <div class="info-row">
+                        <span>Сейчас: <span class="info-time" id="currentTime">--</span></span>
+                    </div>
+                    <div class="info-row">
+                        <span>Файл изменён: <span class="info-value" id="fileDateTime">--</span></span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Основная область -->
-        <div class="main-content" style="margin-top: 40px;">
+        <div class="main-content" style="margin-top: 48px;">
             <div class="tabs-header">
                 <button class="tab-btn active" onclick="switchTab('jp')">Jp</button>
                 <button class="tab-btn" onclick="switchTab('cz')">Cz</button>
@@ -759,13 +932,13 @@
                 <div class="tab-panel active" id="tab-jp">
                     <div class="form-row">
                         <label class="form-label">Путь:</label>
-                        <input type="text" class="form-input" id="jp-path" value="">
+                        <input type="text" class="form-input" id="jp-path" value="" placeholder="Выберите путь...">
                         <button class="btn btn-secondary" onclick="changePath('jp')">Изменить</button>
                     </div>
 
                     <div class="form-row">
                         <label class="form-label">Имя:</label>
-                        <input type="text" class="form-input" id="jp-name" value="">
+                        <input type="text" class="form-input" id="jp-name" value="" placeholder="Введите имя файла...">
                     </div>
 
                     <div class="form-row">
@@ -789,13 +962,13 @@
                 <div class="tab-panel" id="tab-cz">
                     <div class="form-row">
                         <label class="form-label">Путь:</label>
-                        <input type="text" class="form-input" id="cz-path" value="">
+                        <input type="text" class="form-input" id="cz-path" value="" placeholder="Выберите путь...">
                         <button class="btn btn-secondary" onclick="changePath('cz')">Изменить</button>
                     </div>
 
                     <div class="form-row">
                         <label class="form-label">Имя:</label>
-                        <input type="text" class="form-input" id="cz-name" value="">
+                        <input type="text" class="form-input" id="cz-name" value="" placeholder="Введите имя файла...">
                     </div>
 
                     <div class="form-row">
@@ -817,6 +990,7 @@
                         <label class="form-label">Дополнительные листы:</label>
                         <div class="checkbox-row" onclick="toggleCheckbox(this)">
                             <div class="custom-checkbox" id="cz-dop-sheets"></div>
+                            <span style="font-size: 13px; color: var(--text-secondary);">Включить</span>
                         </div>
                     </div>
 
@@ -831,13 +1005,13 @@
                 <div class="tab-panel" id="tab-bam">
                     <div class="form-row">
                         <label class="form-label">Путь:</label>
-                        <input type="text" class="form-input" id="bam-path" value="">
+                        <input type="text" class="form-input" id="bam-path" value="" placeholder="Выберите путь...">
                         <button class="btn btn-secondary" onclick="changePath('bam')">Изменить</button>
                     </div>
 
                     <div class="form-row">
                         <label class="form-label">Имя:</label>
-                        <input type="text" class="form-input" id="bam-name" value="">
+                        <input type="text" class="form-input" id="bam-name" value="" placeholder="Введите имя файла...">
                     </div>
 
                     <div class="form-row">
@@ -859,11 +1033,16 @@
             </div>
         </div>
 
-        <!-- Нижняя панель -->
+        <!-- Нижняя панель-->
         <div class="bottom-panel">
             <div class="progress-header">
-                <span class="progress-title">Процесс</span>
-                <span class="progress-status" id="progressStatus">Готово</span>
+                <span class="progress-title">
+                    <span></span> Процесс
+                </span>
+                <span class="progress-status" id="progressStatus">
+                    <span class="status-dot" id="statusDot"></span>
+                    Готово
+                </span>
             </div>
 
             <div class="progress-bar-container">
@@ -871,9 +1050,9 @@
             </div>
 
             <div class="bottom-actions">
-                <span id="progressDetail" style="font-size: 12px; color: var(--text-secondary);"></span>
+                <span class="progress-detail" id="progressDetail">0%</span>
                 <button class="btn btn-primary" id="startBtn" onclick="startProcessing()">
-                    <span>▶</span> Начать
+                    <span></span> Начать
                 </button>
             </div>
         </div>
@@ -886,9 +1065,7 @@
                 <span class="modal-title">Изменение столбцов Jp</span>
                 <button class="modal-close" onclick="closeModal('modal-jp-columns')">×</button>
             </div>
-            <div class="modal-body" id="jp-columns-body">
-                <!-- Динамически заполняется -->
-            </div>
+            <div class="modal-body" id="jp-columns-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="resetJpColumns()">Сбросить всё</button>
                 <button class="btn btn-success" onclick="saveJpColumns()">Сохранить</button>
@@ -903,12 +1080,10 @@
                 <span class="modal-title">Изменение столбцов Cz</span>
                 <button class="modal-close" onclick="closeModal('modal-cz-columns')">×</button>
             </div>
-            <div class="modal-body" id="cz-columns-body">
-                <!-- Динамически заполняется -->
-            </div>
+            <div class="modal-body" id="cz-columns-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="resetCzColumns()">Сбросить всё</button>
-                <button class="btn btn-success" onclick="saveCzColumns()">Сохранить</button>
+                <button class="btn btn-success" onclick="saveCzColumns()">охранить</button>
             </div>
         </div>
     </div>
@@ -920,12 +1095,10 @@
                 <span class="modal-title">Изменение столбцов Bam</span>
                 <button class="modal-close" onclick="closeModal('modal-bam-columns')">×</button>
             </div>
-            <div class="modal-body" id="bam-columns-body">
-                <!-- Динамически заполняется -->
-            </div>
+            <div class="modal-body" id="bam-columns-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="resetBamColumns()">Сбросить всё</button>
-                <button class="btn btn-success" onclick="saveBamColumns()">Сохранить</button>
+                <button class="btn btn-success" onclick="saveBamColumns()">Сохнить</button>
             </div>
         </div>
     </div>
@@ -938,12 +1111,10 @@
                 <button class="modal-close" onclick="closeModal('modal-cz-rc')">×</button>
             </div>
             <div class="modal-body">
-                <div style="font-size: 12px; color: var(--warning); margin-bottom: 12px;">
+                <div style="font-size: 12px; color: var(--warning); margin-bottom: 12px; padding: 8px 12px; background: var(--warning-light); border-radius: var(--radius-sm); font-weight: 500;">
                     Если нужно несколько значений пишите через запятую
                 </div>
-                <div id="cz-rc-body">
-                    <!-- Динамически заполняется -->
-                </div>
+                <div id="cz-rc-body"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="resetCzRc()">Сбросить всё</button>
@@ -1002,12 +1173,10 @@
                 <span class="modal-title">Необходимо ввести данные</span>
                 <button class="modal-close" onclick="closeModal('modal-recovery')">×</button>
             </div>
-            <div class="modal-body" id="recovery-body">
-                <!-- Динамически заполняется -->
-            </div>
+            <div class="modal-body" id="recovery-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('modal-recovery')">Отмена</button>
-                <button class="btn btn-success" onclick="saveRecoveryData()">Сохранить</button>
+                <button class="btn btn-success" onclick="saveRecoveryData()">💾 Сохранить</button>
             </div>
         </div>
     </div>
@@ -1022,7 +1191,6 @@
             progress: 0,
             isProcessing: false,
 
-            // Данные настроек (загружаются с бэкенда)
             jp: {
                 path: '',
                 name: '',
@@ -1079,7 +1247,9 @@
         // === Время ===
         function updateCurrentTime() {
             const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleString('ru-RU');
+            const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = `${dateStr} ${timeStr}`;
         }
 
         // === Вкладки ===
@@ -1096,8 +1266,6 @@
             appState.programs[program] = !appState.programs[program];
             const toggle = document.getElementById(`toggle-${program}`);
             toggle.classList.toggle('active', appState.programs[program]);
-
-            // Здесь вызываем API: app.set_jp_enabled(), app.set_cz_enabled() и т.д.
             console.log(`Program ${program} enabled:`, appState.programs[program]);
         }
 
@@ -1106,13 +1274,10 @@
             const checkbox = element.querySelector('.custom-checkbox');
             checkbox.classList.toggle('checked');
             appState.czDopSheets = checkbox.classList.contains('checked');
-            // app.set_cz_dop_date(appState.czDopSheets);
         }
 
         // === Пути ===
         function changePath(program) {
-            // В реальном приложении: открыть диалог выбора папки
-            // const path = await eel.updateInfoConfig(1)();
             const path = prompt('Введите путь:', appState[program].path);
             if (path) {
                 appState[program].path = path;
@@ -1142,7 +1307,7 @@
                 const row = document.createElement('div');
                 row.className = 'form-row';
                 row.innerHTML = `
-                    <label class="form-label" style="min-width: 180px;">${key}:</label>
+                    <label class="form-label" style="min-width: 200px;">${key}:</label>
                     <input type="text" class="form-input" id="col-${program}-${key}" value="${Array.isArray(value) ? value.join(', ') : value}">
                 `;
                 body.appendChild(row);
@@ -1183,17 +1348,14 @@
         }
 
         function resetJpColumns() {
-            // app.reset_jp_columns();
             showToast('Столбцы Jp сброшены', 'warning');
         }
 
         function resetCzColumns() {
-            // app.reset_cz_columns();
             showToast('Столбцы Cz сброшены', 'warning');
         }
 
         function resetBamColumns() {
-            // app.reset_bam_columns();
             showToast('Столбцы Bam сброшены', 'warning');
         }
 
@@ -1225,7 +1387,6 @@
         }
 
         function resetCzRc() {
-            // app.reset_cz_rc_params();
             showToast('РЦ параметры сброшены', 'warning');
         }
 
@@ -1233,29 +1394,23 @@
         function saveJpSettings() {
             appState.jp.path = document.getElementById('jp-path').value;
             appState.jp.days = document.getElementById('jp-days').value;
-            // app.set_jp_settings(path, days, {});
             showToast('Настройки Jp сохранены', 'success');
         }
 
         function saveCzSettings() {
             appState.cz.path = document.getElementById('cz-path').value;
             appState.cz.days = document.getElementById('cz-days').value;
-            // app.set_cz_settings(path, days, {}, {});
             showToast('Настройки Cz сохранены', 'success');
         }
 
         function saveBamSettings() {
             appState.bam.path = document.getElementById('bam-path').value;
             appState.bam.days = document.getElementById('bam-days').value;
-            // app.set_bam_settings(path, days, {});
             showToast('Настройки Bam сохранены', 'success');
         }
 
         // === Загрузка настроек ===
         function loadSettings() {
-            // Здесь загрузка с бэкенда
-            // const settings = await app.get_jp_settings();
-
             document.getElementById('jp-path').value = appState.jp.path;
             document.getElementById('jp-name').value = appState.jp.name;
             document.getElementById('jp-days').value = appState.jp.days;
@@ -1272,11 +1427,6 @@
         // === Проверка при старте ===
         function checkStartupData() {
             // const result = app.checking_data_inputs();
-            // if (result.error === 'structure_mismatch') {
-            //     showToast('Структура файла конфига нарушена. Удалите текущий файл конфига', 'error');
-            // } else if (result.error === 'missing_values') {
-            //     showRecoveryDialog(result.data);
-            // }
         }
 
         function showRecoveryDialog(data) {
@@ -1307,7 +1457,6 @@
         function startProcessing() {
             if (appState.isProcessing) return;
 
-            // Проверка на обновление прошлого месяца (1-5 число)
             const day = new Date().getDate();
             if (day <= 5) {
                 if (!confirm('Обновить данные за прошлый месяц?')) {
@@ -1322,11 +1471,11 @@
             const btn = document.getElementById('startBtn');
             btn.disabled = true;
             btn.innerHTML = '<span>⏳</span> Работает...';
+            btn.style.opacity = '0.7';
 
-            document.getElementById('progressStatus').textContent = 'Работает...';
+            document.getElementById('progressStatus').innerHTML = '<span class="status-dot working"></span> Работает...';
             document.getElementById('progressBar').classList.remove('completed');
 
-            // Имитация прогресса (в реальности — callback от бэкенда)
             const interval = setInterval(() => {
                 appState.progress += Math.random() * 15;
                 if (appState.progress >= 100) {
@@ -1336,8 +1485,6 @@
                 }
                 updateProgressBar();
             }, 300);
-
-            // app.start_processing(progress_callback, completion_callback);
         }
 
         function updateProgressBar() {
@@ -1351,15 +1498,16 @@
             const btn = document.getElementById('startBtn');
             btn.disabled = false;
             btn.innerHTML = '<span>▶</span> Начать';
+            btn.style.opacity = '1';
 
-            document.getElementById('progressStatus').textContent = 'Программа завершена!';
+            document.getElementById('progressStatus').innerHTML = '<span class="status-dot"></span> Готово';
             document.getElementById('progressBar').classList.add('completed');
             showToast('Обработка завершена!', 'success');
         }
 
         function updateLastMonth() {
             appState.progress = 0;
-            document.getElementById('progressStatus').textContent = 'Обновление прошлого месяца...';
+            document.getElementById('progressStatus').innerHTML = '<span class="status-dot working"></span> Обновление...';
             document.getElementById('progressBar').classList.remove('completed');
 
             const interval = setInterval(() => {
@@ -1367,13 +1515,11 @@
                 if (appState.progress >= 100) {
                     appState.progress = 100;
                     clearInterval(interval);
-                    document.getElementById('progressStatus').textContent = 'Готово';
+                    document.getElementById('progressStatus').innerHTML = '<span class="status-dot"></span> Готово';
                     showToast('Данные прошлого месяца обновлены', 'success');
                 }
                 updateProgressBar();
             }, 200);
-
-            // app.update_last_mouns(progress_callback);
         }
 
         // === Debug Mode ===
@@ -1392,14 +1538,12 @@
             appState.windowSize[axis] += step;
             document.getElementById(`size${axis.toUpperCase()}`).textContent =
                 `${axis.toUpperCase()}: ${appState.windowSize[axis]}`;
-            // app.modify_window_size(axis, step);
         }
 
         function resetSize() {
             appState.windowSize = { x: 800, y: 600 };
             document.getElementById('sizeX').textContent = 'X: 800';
             document.getElementById('sizeY').textContent = 'Y: 600';
-            // app.reset_window_size();
         }
 
         // === Toast уведомления ===
@@ -1409,7 +1553,7 @@
             toast.className = `toast ${type}`;
 
             const icons = {
-                error: '⚠️',
+                error: '❌',
                 success: '✅',
                 warning: '⚡',
                 info: 'ℹ️'
