@@ -48,10 +48,6 @@ class BamMain:
         self.error_masage_var = False
 
     def get_dates(self, len_date: int, len_date_value: int = 3, year: bool = False):
-        """
-        Возвращает список из трех лет: позавчерашней, вчерашней и сегодняшней.
-
-        """
         result_list = []
         today = dt.strptime(self.mask_date[:10], '%Y-%m-%d')
 
@@ -159,7 +155,6 @@ class BamMain:
 
             return result
 
-        # Функция восстановления: переинициализировать поиск и данные
         def _reload_search():
             try:
                 self.search = SearchBam(listes_excel)
@@ -175,7 +170,6 @@ class BamMain:
             return []
 
     def main(self):
-        """Главное тело"""
         result = []
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
