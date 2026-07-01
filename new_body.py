@@ -1,1 +1,10 @@
-Tap the link to view your conversation with Kimi https://www.kimi.com/share/19f1d6f4-7722-827f-8000-00004ae497d4
+
+import webview
+webview.create_window(
+    'Report Conversion'
+    , 'static/body_html.html'
+    , width=950, height=750
+    , resizable=False
+)
+webview.start()
+
