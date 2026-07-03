@@ -1,6 +1,9 @@
 import os
+import random
 import sys
 import webview
+import threading
+import time
 from pathlib import Path
 
 if getattr(sys, 'frozen', False):
@@ -193,18 +196,48 @@ class Api:
 
 def main():
     api = Api()
-    html_path = STATIC_DIR / "body_html.html"
+    splash_path = STATIC_DIR / "splash.html"
+    main_path = STATIC_DIR / "body_html.html"
 
-    window = webview.create_window(
+    # Создаём splash окно (маленькое, по центру)
+    splash = webview.create_window(
+        title='Good Morning',
+        url=str(splash_path),
+        width=400,
+        height=500,
+        resizable=False,
+        frameless=True,
+        on_top=True,     # Поверх всех окон
+        confirm_close=False
+    )
+
+    # Создаём основное окно (скрытое пока)
+    main_window = webview.create_window(
         title='Report Conversion',
-        url=str(html_path),
+        url=str(main_path),
         width=950,
         height=750,
         resizable=False,
         js_api=api,
-        text_select=False
+        text_select=False,
+        hidden=True  # Скрыто при создании
     )
 
+    def on_loaded():
+        """Вызывается когда основное окно загрузилось"""
+        # Даём время на инициализацию JS
+        time_sleep_main_window = random.randint(2,3)
+        time.sleep(time_sleep_main_window)
+        # Закрываем splash
+        splash.destroy()
+        # Показываем основное окно
+        main_window.show()
+        main_window.restore()
+
+    # Подписываемся на событие загрузки основного окна
+    main_window.events.loaded += on_loaded
+
+    # Запускаем
     webview.start(
         icon=str(ICON_PATH),
         debug=False

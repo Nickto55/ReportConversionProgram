@@ -569,7 +569,6 @@ if __name__ == "__main__":
     else:
         # Импортируем и запускаем GUI
         from body import MainGUI
-        import tkinter as tk
-        root = tk.Tk()
-        gui = MainGUI(root, app)
-        root.mainloop()
+
+
+        gui = MainGUI(app)
