@@ -222,8 +222,6 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-        print('======================================================')
-        print(self.ubroutine_Bam_var)
         if self.ubroutine_Bam_var:
             tr_prog = TrackMain()
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog='Tr')

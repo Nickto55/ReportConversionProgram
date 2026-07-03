@@ -178,7 +178,6 @@ class SearchBam:
         :param get_colum: имя колонки
         :param foc_mode: режим фильтрации (0 = выключен, !=0 = включен)
         """
-        print(foc_mode)
         # Условие пропуска для FOC-режима: пропускаем если колонка Date НЕ пустая
         def skip_condition(row_data: Dict[str, Any]) -> bool:
             date_col = self.config.getBAMColumnName("Table of contents: Date")
@@ -200,11 +199,8 @@ class SearchTrack:
         if sheet_name == 'ФОЦ': column_d = 'Наименование'
         elif sheet_name == 'ПОЦ': column_d = 'Прутковые автоматы'
         elif sheet_name == 'ТОЦ': column_d = 'Токарные ЧПУ'
-        else:
-            print(sheet_name)
-            return
 
-        print(self.config.getBAMPathFile_input())
+
         self.reader = ExcelReader(
             file_path=self.config.getBAMPathFile_input(),
             sheet_name=sheet_name,
@@ -231,7 +227,6 @@ class SearchTrack:
         Возвращает уникальные значения из указанной колонки.
         """
         # Условие пропуска для FOC-режима: пропускаем если колонка Date НЕ пустая
-        print(foc_mode)
         def skip_condition(row_data: Dict[str, Any]) -> bool:
             date_col = self.config.getBAMColumnName("Table of contents: Date")
             return not self.reader.is_empty(row_data.get(date_col))

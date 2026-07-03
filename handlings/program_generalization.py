@@ -1,4 +1,5 @@
-"""Внимание, полоса отображения, и обрезка вставляемых формул, находятся в ExcelPrint, при изменении 5 строчки(оглавления календаря), см. на совместимость"""
+"""Внимание, полоса отображения, и обрезка вставляемых формул, находятся в ExcelPrint,
+при изменении 5 строчки(оглавления календаря), см. на совместимость"""
 
 import calendar
 import copy
@@ -149,36 +150,76 @@ class GeneProg:
             result_row = ["", "", subsection_last, "", ""]
             for i in range(34): result_row.append("")
             result.append(result_row)
-
         return result
 
+    def _extract_date_from_row(self, key_row):
+        """Извлекает дату из строки data_bam.
+        Для обычных строк — из колонки 'Дата', для итоговых — из Unnamed: 11"""
+        date_val = key_row.get("Дата", "")
+        if not pd.isna(date_val) and date_val and str(date_val).strip():
+            return str(date_val).strip()
+
+        # Для итоговых строк ищем дату в Unnamed колонках
+        for col_name in ["Unnamed: 11", "Unnamed: 12", "Unnamed: 13"]:
+            val = key_row.get(col_name, "")
+            if not pd.isna(val) and val and str(val).strip():
+                val_str = str(val).strip()
+                # Проверяем, что это похоже на дату (YYYY.MM.DD или YYYY-MM-DD)
+                if len(val_str) >= 10 and val_str[4] in ".-" and val_str[7] in ".-":
+                    return val_str
+        return ""
+
+    def _is_total_row(self, key_row):
+        """Проверяет, является ли строка итоговой (число в Наименовании, nan в Дате)"""
+        name = key_row.get("Наименование", "")
+        date_val = key_row.get("Дата", "")
+        return isinstance(name, (int, float)) and pd.isna(date_val)
+
+    def _is_data_row(self, key_row):
+        """Проверяет, является ли строка строкой с данными изделия"""
+        name = key_row.get("Наименование", "")
+        return (isinstance(name, str) and name.strip() and
+                not pd.isna(name) and name.strip() not in ["nan", ""])
+
     def filling_data(self, result):
-
         for row_idx in range(len(result)):
-            if row_idx < 8: continue
+            if row_idx < 8:
+                continue
             for column_idx in range(len(result[row_idx])):
-                if column_idx < 8: continue
+                if column_idx < 8:
+                    continue
                 if column_idx < len(result[5]):
+                    if row_idx == 9:
+                        self.jp_row_value_now(result, column_idx, row_idx)
+                    if row_idx == 10:
+                        self.jp_row_value_now(result, column_idx, row_idx, "Вып. Задач")
+                    if row_idx == 14:
+                        self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
+                    if row_idx == 15:
+                        self.bam_row_value_now(result, row_idx, column_idx, 1, self.foc_date_list)
 
-                    if row_idx == 9: self.jp_row_value_now(result, column_idx, row_idx)
-                    if row_idx == 10: self.jp_row_value_now(result, column_idx, row_idx, "Вып. Задач")
+                    if row_idx == 19:
+                        self.bam_row_value_now(result, row_idx, column_idx, 0, self.toc_date_list)
+                    if row_idx == 20:
+                        self.bam_row_value_now(result, row_idx, column_idx, 1, self.toc_date_list)
 
-                    if row_idx == 14: self.bam_row_value_now(result, row_idx, column_idx, 0, self.foc_date_list)
-                    if row_idx == 15: self.bam_row_value_now(result, row_idx, column_idx, 1, self.foc_date_list)
+                    if row_idx == 24:
+                        self.bam_row_value_now(result, row_idx, column_idx, 0, self.poc_date_list)
+                    if row_idx == 25:
+                        self.bam_row_value_now(result, row_idx, column_idx, 1, self.poc_date_list)
 
-                    if row_idx == 19: self.bam_row_value_now(result, row_idx, column_idx, 0, self.toc_date_list)
-                    if row_idx == 20: self.bam_row_value_now(result, row_idx, column_idx, 1, self.toc_date_list)
+                    if row_idx == 29:
+                        self.ldklds(result, row_idx, column_idx, self.egogo)
+                    if row_idx == 30:
+                        self.ldklds(result, row_idx, column_idx, self.foc)
+                    if row_idx == 31:
+                        self.ldklds(result, row_idx, column_idx, self.toc)
+                    if row_idx == 32:
+                        self.ldklds(result, row_idx, column_idx, self.poc)
 
-                    if row_idx == 24: self.bam_row_value_now(result, row_idx, column_idx, 0, self.poc_date_list)
-                    if row_idx == 25: self.bam_row_value_now(result, row_idx, column_idx, 1, self.poc_date_list)
-
-                    if row_idx == 29: self.ldklds(result, row_idx, column_idx, self.egogo)
-                    if row_idx == 30: self.ldklds(result, row_idx, column_idx, self.foc)
-                    if row_idx == 31: self.ldklds(result, row_idx, column_idx, self.toc)
-                    if row_idx == 32: self.ldklds(result, row_idx, column_idx, self.poc)
-
-                    # Обзначение места формул
-                    if row_idx in [16, 17, 21, 22, 26, 27]: self.form_gen(result, row_idx, column_idx)
+                    # Обозначение места формул
+                    if row_idx in [16, 17, 21, 22, 26, 27]:
+                        self.form_gen(result, row_idx, column_idx)
 
         return result
 
@@ -186,20 +227,29 @@ class GeneProg:
         if column_idx < len(result[5]):
             if int(str(self.date_cz_2)[8:10]) == int(result[5][column_idx]) and int(
                     str(self.date_cz_2)[5:7]) == self.now_month:
-                result[row_idx][column_idx] = int(value)
+                result[row_idx][column_idx] = int(value) if value != "" else ""
 
     def bam_row_value_now(self, result, row_idx, column_idx, depth, date_list):
-        dateList_cat = []
         for dateList in date_list:
-            try:
+            # dateList: [наименование, УП, дата_строкой]
+            if len(dateList) < 3:
+                continue
 
-                dateList_cat.append(int(dateList[-1][8:10]))
-                if int(dateList[-1][8:10]) == int(result[5][column_idx]) and int(dateList[-1][5:7]) == self.now_month:
+            date_str = dateList[-1]  # последний элемент — дата
+            if not date_str or not isinstance(date_str, str):
+                continue
+
+            try:
+                # Формат даты: YYYY.MM.DD или YYYY-MM-DD
+                day = int(date_str[8:10])
+                month = int(date_str[5:7].replace(".", ""))
+
+                if day == int(result[5][column_idx]) and month == self.now_month:
                     result[row_idx][column_idx] = dateList[depth]
                     break
-            except Exception as e:
-                print("bam_row_value_now", e)
-                pass
+            except (ValueError, IndexError) as e:
+                print(f"ERROR: bam_row_value_now parsing date '{date_str}': {e}")
+                continue
 
     def jp_row_value_now(self, result, column_idx, row_idx, column_name_data: str = "Задач"):
         cdsount = 0
@@ -230,37 +280,56 @@ class GeneProg:
         self.chapter_gen(result, "ПОЦ", "Выполнено за день, ДСЕ", "Выполнено за день, УП")
         self.chapter_gen(result, "СЗ", "Итого", "ФОЦ", "ТОЦ", "ПОЦ")
 
-        foc_search = "ФОЦ"
-        for key_row in self.data_bam.values():
-            for key_col in key_row.items():
+        # === Определяем текущую секцию и собираем данные ===
+        current_section = "ФОЦ"  # начальная секция по умолчанию
 
-                if "ТОЦ" in key_col:
-                    foc_search = "ТОЦ"
-                elif "ПОЦ" in key_col:
-                    foc_search = "ПОЦ"
-                break
+        last_data = '123'
+        for key, key_row in self.data_bam.items():
+            # Определяем секцию по заголовкам
+            section_marker = key_row.get("ФОЦ", "")
+            if isinstance(section_marker, str):
+                if "ТОЦ" in section_marker:
+                    current_section = "ТОЦ"
+                    continue  # пропускаем строку заголовка
+                elif "ПОЦ" in section_marker:
+                    current_section = "ПОЦ"
+                    continue  # пропускаем строку заголовка
 
-            if foc_search == "ФОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    self.foc_date_list.append(
-                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
-                elif pd.isna(key_row.get("Дата", "")):
-                    continue
+            # Пропускаем пустые строки
+            if not self._is_data_row(key_row) and not self._is_total_row(key_row):
+                continue
 
-            if foc_search == "ТОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    self.toc_date_list.append(
-                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
-                elif pd.isna(key_row.get("Дата", "")):
-                    continue
+            # Формируем date_list: [наименование, УП, дата]
+            name = key_row.get("Наименование", "")
 
-            if foc_search == "ПОЦ":
-                if pd.isna(key_row.get("Дата", "")) and not pd.isna(key_row.get("Наименование", "")):
-                    self.poc_date_list.append(
-                        [key_row.get("Наименование", ""), key_row.get("УП", ""), key_row.get("/::/", "")])
-                elif pd.isna(key_row.get("Дата", "")):
-                    continue
+            up = key_row.get("УП", "")
+            date_str = self._extract_date_from_row(key_row)
 
+            # Пропускаем строки без даты
+            if not date_str:
+                date_str = last_data
+            else:
+                last_data = date_str
+            if isinstance(name, str) or pd.isna(name):
+                continue
+
+
+            # Приводим типы
+            if isinstance(name, (int, float)):
+                name = int(name) if name == int(name) else name
+            if isinstance(up, (int, float)):
+                up = int(up) if up == int(up) else up
+
+            date_list = [name, up, date_str]
+
+            if current_section == "ФОЦ":
+                self.foc_date_list.append(date_list)
+            elif current_section == "ТОЦ":
+                self.toc_date_list.append(date_list)
+            elif current_section == "ПОЦ":
+                self.poc_date_list.append(date_list)
+
+        # === Обработка data_cz (СЗ) ===
         foc_search = ""
         for key_row in self.data_cz.values():
             for key_col in key_row.items():
@@ -280,13 +349,14 @@ class GeneProg:
                         self.date_cz_2 = key_s
                         break
             if foc_search == "Итого":
-                self.egogo = int(key_row.get(self.date_cz_2, ""))
+                self.egogo = int(key_row.get(self.date_cz_2, "")) if not pd.isna(key_row.get(self.date_cz_2, "")) else 0
             if foc_search == "ФОЦ":
-                self.foc = int(key_row.get(self.date_cz_2, ""))
+                self.foc = int(key_row.get(self.date_cz_2, "")) if not pd.isna(key_row.get(self.date_cz_2, "")) else 0
             if foc_search == "ТОЦ":
-                self.toc = int(key_row.get(self.date_cz_2, ""))
+                self.toc = int(key_row.get(self.date_cz_2, "")) if not pd.isna(key_row.get(self.date_cz_2, "")) else 0
             if foc_search == "ПОЦ":
-                self.poc = (key_row.get(self.date_cz_2, ""))
+                poc_val = key_row.get(self.date_cz_2, "")
+                self.poc = int(poc_val) if not pd.isna(poc_val) and poc_val != "" else 0
 
         self.filling_data(result)
 
@@ -319,30 +389,30 @@ class GeneProg:
                 for column_idx in range(len(result[row_idx])):
                     if 4 < column_idx < 8:
                         for key_data in data.keys():
-                            if row_idx == 9 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ЖП", "").get("Всего ЖП", "")
-                            if row_idx == 10 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ЖП", "").get("Выполнено ЖП", "")
-                            if row_idx == 14 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ФОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 15 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ФОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 19 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ТОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 20 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ТОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 24 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ПОЦ", "").get("Выполнено за день, ДСЕ", "")
-                            if row_idx == 25 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("ПОЦ", "").get("Выполнено за день, УП", "")
-                            if row_idx == 29 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("СЗ", "").get("Итого", "")
-                            if row_idx == 30 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("СЗ", "").get("ФОЦ", "")
-                            if row_idx == 31 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("СЗ", "").get("ТОЦ", "")
-                            if row_idx == 32 and result[5][column_idx] == int(key_data):  result[row_idx][column_idx] = \
-                                data[key_data].get("СЗ", "").get("ПОЦ", "")
+                            if row_idx == 9 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ЖП", "").get("Всего ЖП", "")
+                            if row_idx == 10 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ЖП", "").get("Выполнено ЖП", "")
+                            if row_idx == 14 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ФОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 15 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ФОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 19 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ТОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 20 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ТОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 24 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ПОЦ", "").get("Выполнено за день, ДСЕ", "")
+                            if row_idx == 25 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("ПОЦ", "").get("Выполнено за день, УП", "")
+                            if row_idx == 29 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("СЗ", "").get("Итого", "")
+                            if row_idx == 30 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("СЗ", "").get("ФОЦ", "")
+                            if row_idx == 31 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("СЗ", "").get("ТОЦ", "")
+                            if row_idx == 32 and result[5][column_idx] == int(key_data):
+                                result[row_idx][column_idx] = data[key_data].get("СЗ", "").get("ПОЦ", "")
 
         return result
 
@@ -415,4 +485,7 @@ if __name__ == "__main__":
     config = JsonConfig()
 
     ge_prog = GeneProg()
-    print(ge_prog.main()[10])
+    jhjhhgjhjg=ge_prog.main()
+    print('====================================================================================================')
+    for i in jhjhhgjhjg:
+        print(i)

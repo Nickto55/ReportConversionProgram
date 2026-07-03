@@ -23,6 +23,8 @@ class Api:
         self.app.ubroutine_Jp_var = True
         self.app.ubroutine_Cz_var = True
         self.app.ubroutine_Bam_var = True
+        self._logs = []  # ← храним логи в памяти
+        self._setup_log_capture()
 
     def select_folder(self):
         try:
@@ -32,6 +34,66 @@ class Api:
             print(f"Error selecting folder: {e}")
             return ""
 
+    def _setup_log_capture(self):
+        """Перехватывает логи из logging и stdout"""
+        import logging
+        import sys
+
+        class LogCapture:
+            def __init__(self, api):
+                self.api = api
+                self.original_stdout = sys.stdout
+                self.original_stderr = sys.stderr
+
+            def write(self, text):
+                self.original_stdout.write(text)
+                text = text.strip()
+                if text:
+                    self.api._add_log('info', text)
+
+            def flush(self):
+                self.original_stdout.flush()
+
+        # Перехват stdout
+        sys.stdout = LogCapture(self)
+
+        # Перехват logging если есть
+        try:
+            root_logger = logging.getLogger()
+            for handler in root_logger.handlers:
+                if hasattr(handler, 'stream'):
+                    handler.stream = sys.stdout
+        except:
+            pass
+
+    def _add_log(self, level, message):
+        """Добавляет лог в память"""
+        from datetime import datetime
+        self._logs.append({
+            'time': datetime.now().strftime('%H:%M:%S'),
+            'level': level,
+            'message': message
+        })
+        # Ограничиваем размер
+        if len(self._logs) > 500:
+            self._logs = self._logs[-250:]
+
+    def get_logs(self):
+        """Возвращает логи из памяти"""
+        return self._logs
+
+    def clear_logs(self):
+        """Очищает логи в памяти"""
+        self._logs = []
+        # Очищаем и файл
+        try:
+            log_path = BASE_DIR / "report_conv.log"
+            if log_path.exists():
+                with open(log_path, 'w', encoding='utf-8') as f:
+                    f.write('')
+        except:
+            pass
+        return True
     def select_file(self):
         try:
             path = updateInfoConfig(fileOrDir=1)
@@ -216,7 +278,7 @@ def main():
         title='Report Conversion',
         url=str(main_path),
         width=950,
-        height=750,
+        height=730,
         resizable=False,
         js_api=api,
         text_select=False,
