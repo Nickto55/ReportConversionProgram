@@ -240,7 +240,7 @@ def main():
     # Запускаем
     webview.start(
         icon=str(ICON_PATH),
-        debug=False
+        debug=True
     )
 
 
