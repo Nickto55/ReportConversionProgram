@@ -122,10 +122,15 @@
         .modal-close:hover { background: var(--error-light); color: var(--error); }
         .modal-body { display: flex; flex-direction: column; gap: 14px; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
-        .top-bar { position: absolute; top: 0; left: 240px; right: 0; height: 30px; background: #f9faeed3; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 4px; z-index: 10; }
+        .top-bar { justify-content: space-between; position: absolute; top: 0; left: 240px; right: 0; height: 30px; background: #f9faeed3; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 0 0 20px; gap: 4px; z-index: 10; }
         .menu-item { position: relative; }
         .menu-btn { padding: 8px 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
         .menu-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .window-close { padding: 8px 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; align-items: center; }
+        .window-close:hover { background: rgba(250, 39, 39, 0.664); color: rgba(209, 209, 209, 0.726); }
+        .window-collapse { padding: 8px 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; align-items: center; }
+        .window-collapse:hover { background: rgba(90, 90, 90, 0.61); color: rgba(209, 209, 209, 0.726); }
+
         .dropdown { display: none; position: absolute; top: calc(100%); left: 0; background: #f1f5f9; border: 1px solid var(--border); border-radius: var(--radius-sm); min-width: 260px; box-shadow: var(--shadow-lg); z-index: 100; overflow: hidden; }
         .menu-item:hover .dropdown { display: block; animation: fadeIn 0.15s ease; }
         .dropdown-item { padding: 10px 16px; cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s; border-bottom: 1px solid var(--border-light); font-weight: 500; }
@@ -208,18 +213,24 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <div class="top-bar">
-        <div class="menu-item">
-            <button class="menu-btn">Settings</button>
-            <div class="dropdown">
-                <div class="dropdown-item" onclick="openDebugModal()">Debug Mode</div>
-                <div class="dropdown-item" onclick="openConsoleModal()">Open logs</div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+            <div class="menu-item">
+                <button class="menu-btn">Settings</button>
+                <div class="dropdown">
+                    <div class="dropdown-item" onclick="openDebugModal()">Debug Mode</div>
+                    <div class="dropdown-item" onclick="openConsoleModal()">Open logs</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-btn">Run</button>
+                <div class="dropdown">
+                    <div class="dropdown-item" onclick="updateLastMonth()">Ручной запуск обновлений прошлого месяца</div>
+                </div>
             </div>
         </div>
-        <div class="menu-item">
-            <button class="menu-btn">Run</button>
-            <div class="dropdown">
-                <div class="dropdown-item" onclick="updateLastMonth()">Ручной запуск обновлений прошлого месяца</div>
-            </div>
+        <div style="display: flex; align-items: center;">
+            <button class="window-collapse" onclick="minimizeWindow()" title="Свернуть">−</button>
+            <button class="window-close" onclick="closeWindow()" title="Закрыть">✕</button>
         </div>
     </div>
 
@@ -447,13 +458,13 @@
                 <!-- Панель управления -->
                 <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); background: var(--bg-tertiary);">
                     <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="clearConsole()">
-                        🗑️ Очистить
+                        Очистить
                     </button>
                     <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="copyConsole()">
-                        📋 Копировать
+                        Копировать
                     </button>
                     <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="refreshConsole()">
-                        🔄 Обновить
+                        Обновить
                     </button>
                     <div style="flex: 1;"></div>
                     <label class="checkbox-row" style="padding: 0; font-size: 12px;">
@@ -1329,6 +1340,24 @@
                 toast.style.animation = 'slideIn 0.3s ease reverse';
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        // ========== КНОПКИ УПРАВЛЕНИЯ ОКНОМ ==========
+
+        async function minimizeWindow() {
+            try {
+                await callApi('minimize_window');
+            } catch (e) {
+                console.error('Minimize error:', e);
+            }
+        }
+
+        async function closeWindow() {
+            try {
+                await callApi('close_window');
+            } catch (e) {
+                console.error('Close error:', e);
+            }
         }
 
         // === Закрытие модалок ===

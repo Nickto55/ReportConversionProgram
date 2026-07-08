@@ -18,13 +18,34 @@ from report_conversion import ReportConversion, resource_path, updateInfoConfig
 
 
 class Api:
-    def __init__(self):
+    def __init__(self, window=None):
+        self._window = window          # ← ссылка на окно
         self.app = ReportConversion()
         self.app.ubroutine_Jp_var = True
         self.app.ubroutine_Cz_var = True
         self.app.ubroutine_Bam_var = True
-        self._logs = []  # ← храним логи в памяти
+        self._logs = []
         self._setup_log_capture()
+
+    def set_window(self, window):
+        """Устанавливаем ссылку на окно после создания"""
+        self._window = window
+
+    # ========== КНОПКИ ОКНА ==========
+
+    def minimize_window(self):
+        """Свернуть окно"""
+        if self._window:
+            self._window.minimize()
+        return True
+
+    def close_window(self):
+        """Закрыть окно и завершить приложение"""
+        if self._window:
+            self._window.destroy()
+        return True
+
+    # ========== ОСТАЛЬНОЙ КОД (без изменений) ==========
 
     def select_folder(self):
         try:
@@ -35,7 +56,6 @@ class Api:
             return ""
 
     def _setup_log_capture(self):
-        """Перехватывает логи из logging и stdout"""
         import logging
         import sys
 
@@ -54,10 +74,8 @@ class Api:
             def flush(self):
                 self.original_stdout.flush()
 
-        # Перехват stdout
         sys.stdout = LogCapture(self)
 
-        # Перехват logging если есть
         try:
             root_logger = logging.getLogger()
             for handler in root_logger.handlers:
@@ -67,25 +85,20 @@ class Api:
             pass
 
     def _add_log(self, level, message):
-        """Добавляет лог в память"""
         from datetime import datetime
         self._logs.append({
             'time': datetime.now().strftime('%H:%M:%S'),
             'level': level,
             'message': message
         })
-        # Ограничиваем размер
         if len(self._logs) > 500:
             self._logs = self._logs[-250:]
 
     def get_logs(self):
-        """Возвращает логи из памяти"""
         return self._logs
 
     def clear_logs(self):
-        """Очищает логи в памяти"""
         self._logs = []
-        # Очищаем и файл
         try:
             log_path = BASE_DIR / "report_conv.log"
             if log_path.exists():
@@ -94,6 +107,7 @@ class Api:
         except:
             pass
         return True
+
     def select_file(self):
         try:
             path = updateInfoConfig(fileOrDir=1)
@@ -258,10 +272,10 @@ class Api:
 
 def main():
     api = Api()
+
     splash_path = STATIC_DIR / "splash.html"
     main_path = STATIC_DIR / "body_html.html"
 
-    # Создаём splash окно (маленькое, по центру)
     splash = webview.create_window(
         title='Good Morning',
         url=str(splash_path),
@@ -269,40 +283,37 @@ def main():
         height=500,
         resizable=False,
         frameless=True,
-        on_top=True,     # Поверх всех окон
+        on_top=True,
         confirm_close=False
     )
 
-    # Создаём основное окно (скрытое пока)
     main_window = webview.create_window(
         title='Report Conversion',
         url=str(main_path),
         width=950,
         height=730,
         resizable=False,
+        frameless=True,
         js_api=api,
         text_select=False,
-        hidden=True  # Скрыто при создании
+        hidden=True
     )
 
+    # ← Передаём ссылку на окно в API
+    api.set_window(main_window)
+
     def on_loaded():
-        """Вызывается когда основное окно загрузилось"""
-        # Даём время на инициализацию JS
-        time_sleep_main_window = random.randint(2,3)
+        time_sleep_main_window = random.randint(2, 3)
         time.sleep(time_sleep_main_window)
-        # Закрываем splash
         splash.destroy()
-        # Показываем основное окно
         main_window.show()
         main_window.restore()
 
-    # Подписываемся на событие загрузки основного окна
     main_window.events.loaded += on_loaded
 
-    # Запускаем
     webview.start(
         icon=str(ICON_PATH),
-        debug=True
+        debug=False
     )
 
 
