@@ -8,16 +8,16 @@ from datetime import datetime as dt
 from tkinter import messagebox, filedialog
 
 import plyer
-
+import tkinter as tk
 import static.config as Config
 import scripts.excel_enter as excel_enter
 import scripts.handlings.handling_json as handling_json
 
-from programm.program_jp import JpMain
-from programm.program_bam import BamMain
-from programm.program_cz import CzMain
-from programm.program_generalization import GeneProg
-from programm.program_for_tracking import TrackMain
+from handlings.program_jp import JpMain
+from handlings.program_bam import BamMain
+from handlings.program_cz import CzMain
+from handlings.program_generalization import GeneProg
+from handlings.program_for_tracking import TrackMain
 
 from scripts.handlings.handling_log import logger, attempt_recover
 
@@ -170,9 +170,7 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-
-
-
+        send_notification("Обновление прошло успешно", "Обновление прошлого месяца завершено. \n Не открывайте файл, Начало работы основной программы", 10)
         
         return True
     
@@ -228,9 +226,9 @@ class ReportConversion:
             tr_prog = TrackMain()
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog='Tr')
             excelPr.write_to_sheet(tr_prog.main(), "Отслеживание")
-        
+
         send_notification("Программа завершена", "Программа завершена, проверте файл", 16)
-        
+
         if completion_callback:
             completion_callback()
         
@@ -569,7 +567,6 @@ if __name__ == "__main__":
     else:
         # Импортируем и запускаем GUI
         from body import MainGUI
-        import tkinter as tk
-        root = tk.Tk()
-        gui = MainGUI(root, app)
-        root.mainloop()
+
+
+        gui = MainGUI(app)

@@ -203,9 +203,6 @@ class CzMain:
         rc_no_repit = self.search.get_colum(self.columns[0], foc_mode=1)
         accepted_no_repit = self.search.get_colum(self.columns[1], foc_mode=1)
 
-        # # """ Если вдруг надо будет автоматизировать выбор"""
-        # if "[]" == self.config.getCzColumnName("Table of contents: Rc full value"):
-        #     self.config.setCzColumnName("Table of contents: Rc full value", rc_no_repit)
         if "[]" == self.config.getCzColumnName("Table of contents: Accepted full value"):
             self.config.setCzColumnName("Table of contents: Accepted full value", rc_no_repit)
 
@@ -461,9 +458,7 @@ class CzMain:
             i += 3
             result_row.append(result[2][i] + result[3][i] + result[4][i])
         result.insert(2, result_row)
-        # result.insert(2, ["Итого", result[2][1] + result[3][1] + result[4][1], "",
-        #                   result[2][3] + result[3][3] + result[4][3], result[2][4] + result[3][4] + result[4][4],
-        #                   result[2][5] + result[3][5] + result[4][5], result[2][6] + result[3][6] + result[4][6]]
+
         list_dse_for_check = []
 
         def rc_11102(date_search: int = None):
@@ -743,8 +738,7 @@ class CzMain:
             result_row.append(rc_11404(listDate[i]))
         result.append(result_row)
 
-        # for i in result:
-        #     print(i)
+
         return result
 
 
@@ -835,10 +829,6 @@ class GuiManager:
         notebook.add(subscribed_frame, text="Подписано")
         self.subscribed_vars = self.create_checkboxes(subscribed_frame, subscribed_list, "Выберите подписанные")
 
-        # # Вкладка для РЦ
-        # rc_frame = ttk.Frame(notebook)
-        # notebook.add(rc_frame, text="РЦ")
-        # self.rc_vars = self.create_checkboxes(rc_frame, rc_list, "Выберите РЦ")
 
         # Кнопка для подтверждения выбора
         button_frame = ttk.Frame(self.root)

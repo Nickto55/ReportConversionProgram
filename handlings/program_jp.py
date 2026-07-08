@@ -174,8 +174,6 @@ class JpMain:
                 result.append([date, 0,0])
 
         # # Выводим результат
-        # for row in result:
-        #     print(row)
         return result
 
     def second_t(self):
@@ -244,9 +242,7 @@ class JpMain:
                         data.get(pos_qwetion, "")
                     ]
                 )
-        # for i in result:
-        #     print(i)
-        # print(len(result))
+
         return result
 
     def main(self):
@@ -289,48 +285,6 @@ class JpMain:
                 else:
                     res_row.append("")
             result.append(res_row)
-
-        """
-        1 версия
-        # for row in range(min(len(result1), len(result2))):
-        #     result_row = []
-        #     for column in range(sum_count_column + 1):
-        #         if column != 0 and column != sum_count_column - count_column2 - 1 and column != sum_count_column - count_column2:
-        #             column -= 1
-        #             if column < count_column1:
-        #                 result_row.append(result1[row][column])
-        #             column -= 2
-        #             if count_column1 <= column <= count_column1 + count_column2:
-        #                 result_row.append(result2[row][column - count_column1])
-        #         else:
-        #             result_row.append("")
-        #     result.append(result_row)
-        # 
-        # if count_column1 > count_column2:
-        #     for row in range(len(result2), len(result1)):
-        #         result_row = []
-        #         for column in range(sum_count_column + 1):
-        #             if column != 0 and column > count_column1 + 1:
-        #                 if column < count_column1:
-        #                     result_row.append(result1[row][column])
-        #             else:
-        #                 result_row.append("")
-        #         result.append(result_row)
-        # 
-        # if count_column1 < count_column2:
-        #     for row in range(len(result1), len(result2)):
-        #         result_row = []
-        #         for column in range(sum_count_column + 3):
-        #             if column > count_column1 + 2:
-        #                 column -= 2
-        #                 if count_column1 <= column <= count_column1 + count_column2:
-        #                     result_row.append(result2[row][column - count_column1 - 1])
-        #             else:
-        #                 result_row.append("")
-        #         result.append(result_row)
-        """
-        # for i in result:
-        #     print(i)
         return result
 
 

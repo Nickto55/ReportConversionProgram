@@ -17,9 +17,11 @@ class MainGUI:
     Вся отрисовка и взаимодействие с пользователем.
     """
     
-    def __init__(self, root, app: ReportConversion):
+    def __init__(self, app: ReportConversion):
+
         self.app = app
-        self.root = root
+
+        self.root = tk.Tk()
         
         # Переменные GUI
         self.progresslabel_var = StringVar(value="...")
@@ -43,6 +45,8 @@ class MainGUI:
         # Мгновенный старт если нужен
         if app.should_start_immediately():
             self.start_button_command()
+
+        root.mainloop()
     
     def _sync_vars_to_app(self):
         """Синхронизирует переменные GUI с логикой."""
@@ -594,8 +598,8 @@ class MainGUI:
         # Проверка на обновление прошлого месяца
         if int(self.app.time_and_day_now[8:10]) <= 5:
             if messagebox.askyesno("Внимание", "Обновить данные за прошлый месяц?"):
-                self.update_last_mouns()
-                return
+                self.update_last_mouns(progress_barbar=True)
+
         
         self.brogressbar_value_var.set(0)
         self.progressbar.update()

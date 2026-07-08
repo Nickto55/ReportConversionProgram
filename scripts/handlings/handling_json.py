@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import tkinter as tk
 from tkinter import messagebox, filedialog
 
@@ -18,10 +19,12 @@ def updateInfoConfig(fileOrDir: int):
 
 class JsonConfig:
     def __init__(self):
-        self.CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".ReportConversionProgram")
+        self.name_programm_config_dir = ".ReportConversionProgram"
+        self.CONFIG_DIR = os.path.join(os.path.expanduser("~"), os.path.join('configs', self.name_programm_config_dir))
         self.file_path = os.path.join(self.CONFIG_DIR, "ConfigFile.json")
         self.data = Config.configProgram
 
+        self.transferring_config()
         self._ensure_file_exists()
         self.load()
 
@@ -34,7 +37,7 @@ class JsonConfig:
                 self.setBAMFilePathAndName()
         except Exception as e:
             messagebox.showerror("Ошибка", "Произошла ошибка при проверке наличия файлов")
-            print("Произошла ошибка при проверке наличия файлов",e)
+            print("Произошла ошибка при проверке наличия файлов", e)
 
         try:
             if self.getConfigVersionConfig() < float(
@@ -44,21 +47,31 @@ class JsonConfig:
                 return
         except Exception as e:
             messagebox.showwarning("Внимание", "Версия файла конфига ниже чем версия программы, конфиг не совместим")
-            print("Версия файла конфига ниже чем версия программы, конфиг не совместим",e)
+            print("Версия файла конфига ниже чем версия программы, конфиг не совместим", e)
             return
 
     def save(self):
         """Сохраняет текущие данные в файл."""
         with open(self.file_path, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=4,ensure_ascii=False)
+            json.dump(self.data, f, indent=4, ensure_ascii=False)
         self.load()
+
+    def transferring_config(self):
+        try:
+            if self.name_programm_config_dir in os.listdir(
+                    os.path.expanduser("~")) and not self.name_programm_config_dir in os.listdir(
+                    os.path.join(os.path.expanduser("~"), 'configs')):
+                shutil.copytree(os.path.join(os.path.expanduser("~"), self.name_programm_config_dir),
+                                os.path.dirname(self.file_path))
+        except:
+            pass
 
     def _ensure_file_exists(self):
         """Создаёт файл и структуру данных, если их нет."""
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
         if not os.path.exists(self.file_path):
             with open(self.file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, indent=4,ensure_ascii=False)
+                json.dump(self.data, f, indent=4, ensure_ascii=False)
 
     def load(self):
         """Загружает данные из файла."""
@@ -363,7 +376,6 @@ class JsonConfig:
         return data.get("last 3 day in mounth", "")
 
     def set_ge_last_days(self, Mounth, data):
-
 
         self.data["Ge"]["last 3 day in mounth"][Mounth] = data
         self.save()

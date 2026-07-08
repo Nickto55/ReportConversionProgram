@@ -60,7 +60,6 @@ class TrackMain:
                 )
 
         return self.data
-        # return result_data
 
 
 if __name__ == "__main__":

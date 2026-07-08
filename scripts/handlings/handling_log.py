@@ -2,6 +2,7 @@ import logging
 import traceback
 from logging.handlers import RotatingFileHandler
 
+import pandas as pd
 
 logger = logging.getLogger("ReportConversion")
 
@@ -25,7 +26,7 @@ def setup_logger(logfile: str = "report_conv.log"):
     return logger
 
 
-setup_logger()
+
 
 
 def attempt_recover(callable_func, recover_funcs=None, attempts: int = 2, *args, **kwargs):
@@ -53,4 +54,22 @@ def attempt_recover(callable_func, recover_funcs=None, attempts: int = 2, *args,
                 logger.info("Retrying %s (next attempt %s)", getattr(callable_func, "__name__", str(callable_func)), attempt + 1)
     # Все попытки исчерпаны
     logger.error("All attempts failed for %s", getattr(callable_func, "__name__", str(callable_func)))
+    print(last_exc)
     raise last_exc
+
+def test(jj=None):
+    fdsf = 'djfksl'
+    if not pd.isna(jj):
+        print('получилось')
+        return
+    try:
+        return int(fdsf)
+    except:
+        attempt_recover(test())
+
+
+logger.exception("CzMain: failed to initialize search/data/headers; using empty defaults")
+
+#
+# print(attempt_recover('ssdadsaasd'))
+
