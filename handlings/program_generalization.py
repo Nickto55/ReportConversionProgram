@@ -220,8 +220,7 @@ class GeneProg:
                     # Обозначение места формул
                     if row_idx in [16, 17, 21, 22, 26, 27]:
                         self.form_gen(result, row_idx, column_idx)
-        # for i in result:
-        #     print(i)
+
         return result
 
     def ldklds(self, result, row_idx, column_idx, value):
@@ -284,6 +283,7 @@ class GeneProg:
         # === Определяем текущую секцию и собираем данные ===
         current_section = "ФОЦ"  # начальная секция по умолчанию
 
+        last_data = '123'
         for key, key_row in self.data_bam.items():
             # Определяем секцию по заголовкам
             section_marker = key_row.get("ФОЦ", "")
@@ -307,9 +307,12 @@ class GeneProg:
 
             # Пропускаем строки без даты
             if not date_str:
+                date_str = last_data
+            else:
+                last_data = date_str
+            if isinstance(name, str) or pd.isna(name):
                 continue
-            if isinstance(name, str):
-                continue
+
 
             # Приводим типы
             if isinstance(name, (int, float)):
@@ -319,7 +322,6 @@ class GeneProg:
 
             date_list = [name, up, date_str]
 
-            # Распределяем по секциям
             if current_section == "ФОЦ":
                 self.foc_date_list.append(date_list)
             elif current_section == "ТОЦ":
@@ -484,6 +486,6 @@ if __name__ == "__main__":
 
     ge_prog = GeneProg()
     jhjhhgjhjg=ge_prog.main()
-    # print('====================================================================================================')
-    # for i in jhjhhgjhjg:
-    #     print(i)
+    print('====================================================================================================')
+    for i in jhjhhgjhjg:
+        print(i)

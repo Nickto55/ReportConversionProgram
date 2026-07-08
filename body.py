@@ -17,9 +17,11 @@ class MainGUI:
     Вся отрисовка и взаимодействие с пользователем.
     """
     
-    def __init__(self, root, app: ReportConversion):
+    def __init__(self, app: ReportConversion):
+
         self.app = app
-        self.root = root
+
+        self.root = tk.Tk()
         
         # Переменные GUI
         self.progresslabel_var = StringVar(value="...")
@@ -43,6 +45,8 @@ class MainGUI:
         # Мгновенный старт если нужен
         if app.should_start_immediately():
             self.start_button_command()
+
+        root.mainloop()
     
     def _sync_vars_to_app(self):
         """Синхронизирует переменные GUI с логикой."""

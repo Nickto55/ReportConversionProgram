@@ -1,187 +1,143 @@
 from datetime import timedelta, datetime as dt
 from tkinter import messagebox
-
 import pandas as pd
 
 import scripts.excel_enter as excel_enter
 from scripts.handlings.handling_json import JsonConfig
 from scripts.handlings.handling_classes import SearchBam
-from scripts.handlings.handling_log import logger, attempt_recover
-
-
-
-
-
-def date_ref(date_n, len_date_value: int = 3, varibel: int = 0):
-    if varibel:
-        if len_date_value == 1:
-            format_str = "%Y"
-        elif len_date_value == 2:
-            format_str = "%Y.%m"
-        else:
-            format_str = "%Y.%m.%d"
-    else:
-        if len_date_value == 1:
-            format_str = "%Y"
-        elif len_date_value == 2:
-            format_str = "%Y-%m"
-        else:
-            format_str = "%Y-%m-%d"
-
-    try:
-        return dt.strftime(date_n, format_str)
-    except:
-        pass
+from scripts.handlings.handling_log import logger
 
 
 class BamMain:
-    def __init__(self,mask_date:str = str(dt.now())):
+    def __init__(self, mask_date: str = str(dt.now())):
         self.config = JsonConfig()
-
-        self.listes_excel = self.config.getBAMColumnName( "Table of contents: listes_excel", intOrlist=1)
-        """Надо изменить на конфиг"""
-
-        self.search = None
-        self.listes_excel_last = ""
+        # Получаем список листов/файлов из конфигурации
+        self.listes_excel = self.config.getBAMColumnName("Table of contents: listes_excel", intOrlist=1)
         self.mask_date = mask_date
-
         self.error_masage_var = False
 
-    def get_dates(self, len_date: int, len_date_value: int = 3, year: bool = False):
-        result_list = []
+        # Заранее кешируем имена колонок из конфига, чтобы не дёргать его в циклах
+        self.col_date = self.config.getBAMColumnName("Table of contents: Date")
+        self.col_list_date = int(self.config.getBAMColumnName("Table of contents: List_date"))
+
+    def get_allowed_dates(self) -> set:
+        """Генерирует сет валидных дат для фильтрации (быстрее, чем поиск по списку)."""
         today = dt.strptime(self.mask_date[:10], '%Y-%m-%d')
-
-        for i in range(0, len_date):
-            if year:
-                date_form = today - timedelta(days=i * 365)
-            else:
-                date_form = today - timedelta(days=i)
-            if len_date_value == 1:
-                format_str = "%Y"
-            elif len_date_value == 2:
-                format_str = "%Y-%m"
-            else:
-                format_str = "%Y-%m-%d"
-            result_list.append(dt.strftime(date_form, format_str))
-
-        return result_list
-
-    def headers_sort(self, headers):
-        headers.sort()
-        headers.remove("")
-        result = []
-        date_years = self.get_dates(int(self.config.getBAMColumnName("Table of contents: List_date")))
-        for year_date in headers:
-            if year_date in date_years:
-                result.append(year_date)
-        return result
-
-    def headers_sort_full(self, headers):
-        headers.sort()
-        headers.remove("")
-        return headers
+        allowed_dates = set()
+        for i in range(self.col_list_date):
+            date_form = today - timedelta(days=i)
+            allowed_dates.add(date_form.strftime("%Y.%m.%d"))
+        return allowed_dates
 
     def result_creation_function(self, listes_excel):
-        def _process():
-            self.search = SearchBam(listes_excel)
-            self.data = self.search.get_dict_all_data()
+        try:
+            # Инициализируем поиск и получаем данные
+            search = SearchBam(listes_excel)
+            raw_data = search.get_dict_all_data()
 
-            self.headers = self.headers_sort(self.search.get_colum(self.config.getBAMColumnName("Table of contents: Date")))
-            result = []
-            result_row = []
-            for row in self.data.values():
-                for i in row.keys():
-                    result_row.append(i)
-                break
-            result_row.append("/::/")
-            result.append(result_row)
-            i_sort_last = ""
-            try:
-                i_sort_last = self.headers[-1]
-            except Exception as err:
+            if not raw_data:
+                return []
+
+            # Превращаем словарь в DataFrame для удобной и быстрой работы
+            df = pd.DataFrame.from_dict(raw_data, orient='index')
+
+            # 1. Приведение дат к единому формату %Y.%m.%d
+            # errors='coerce' превратит сломанные даты в NaT (Not a Time), программа не упадёт
+            df['parsed_date'] = pd.to_datetime(df[self.col_date], errors='coerce')
+            df['formatted_date'] = df['parsed_date'].dt.strftime("%Y.%m.%d")
+
+            # 2. Фильтрация по периоду (дfloating окно дней из настроек)
+            allowed_dates = self.get_allowed_dates()
+            df_filtered = df[df['formatted_date'].isin(allowed_dates)].copy()
+
+            if df_filtered.empty:
                 if not self.error_masage_var:
-                    print('___________ERROR__________________',err,'______________________________',sep="\n")
-                    for i,ii in self.data.items():
-                        print(i,ii)
-
-                    messagebox.showinfo("Ошибка", "За указанный периуд нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
+                    messagebox.showinfo("Ошибка",
+                                        "За указанный период нет данных. \nВ настройках программы БАМ увеличьте дни отображения")
                     self.error_masage_var = True
-                    return ["ПУСТО"]
+                return [["ПУСТО"]]
 
-            row_for_count = 0
-            row_count = 1
-            count_dse = 0
-            count_up = 0
-            count_dse2 = 0
-            count_up2 = 0
+            # Сортируем по дате, чтобы группы шли по порядку
+            df_filtered = df_filtered.sort_values(by='formatted_date')
 
-            for i_sort in self.headers:
-                if i_sort_last != i_sort or self.listes_excel_last != listes_excel:
-                    if self.listes_excel_last != listes_excel:
-                        self.listes_excel_last = listes_excel
-                    result.append(["/../","","","","","","","",""])
-                    row_count += 1
-                    row_for_count = row_count-1
-                for row in self.data.values():
+            # Формируем заголовки (первая строчка)
+            headers_row = list(df.columns)
+            if 'parsed_date' in headers_row: headers_row.remove('parsed_date')
+            if 'formatted_date' in headers_row: headers_row.remove('formatted_date')
+
+            result = [headers_row + ["/::/"]]
+
+
+
+            # col_up_name = df_filtered.columns[5]
+            # col_seven_name = df_filtered.columns[7]
+
+            col_seven_name = 'Наименование'
+            col_up_name = 'УП'
+
+            accumulated_dse = 0
+            accumulated_up = 0
+
+            for date_group, group in df_filtered.groupby('formatted_date'):
+                result.append(["/../", "", "", "", "", "", "", "", ""])
+                row_for_count_idx = len(result) - 1
+
+                current_dse_count = 0
+                current_up_sum = 0
+
+                for _, row in group.iterrows():
+                    row_dict = row.to_dict()
+                    row_dict[self.col_date] = date_group
 
                     try:
-                        date_row = date_ref(row.get(self.config.getBAMColumnName("Table of contents: Date"), ""))
-                    except Exception:
-                        date_row = row.get(self.config.getBAMColumnName("Table of contents: Date"), "")
+                        val_up = row_dict.get(col_up_name, 0)
+                        if pd.notna(val_up) and int(val_up) != 0:
+                            current_up_sum += int(val_up)
+                            current_dse_count += 1
+                    except Exception as e:
+                        print(e)
 
-                    if date_row == i_sort and date_row != "":
-                        row_count += 1
-                        row[self.config.getBAMColumnName("Table of contents: Date")] = date_ref(
-                            row.get(self.config.getBAMColumnName("Table of contents: Date"), ""), varibel=1)
-                        row = list(row.values())[1:]
-                        try:
-                            if not pd.isna(row[5]) and int(row[5]) != 0:
-                                count_up += int(row[5])
-                                count_dse += 1
-                        except Exception:
-                            logger.exception("Failed to parse UP value: %s", row[5] if len(row) > 5 else None)
-                        row.insert(0, "")
-                        result.append(row)
-                i_sort_last = i_sort
-                # Вставляем подсчёты
-                try:
-                    result[row_for_count].insert(3,  count_dse-count_dse2)
-                    result[row_for_count].insert(6,  count_up-count_up2)
-                    result[row_for_count].append(result[row_for_count+1][7])
-                except Exception:
-                    logger.exception("Failed to write summary row at index %s", row_for_count)
-                count_dse2 = count_dse
-                count_up2 = count_up
+                    # Убираем технические колонки pandas перед выгрузкой в массив
+                    del row_dict['parsed_date']
+                    del row_dict['formatted_date']
+
+                    # Превращаем в список, отсекая первый элемент (как list(row.values())[1:])
+                    row_list = list(row_dict.values())[1:]
+                    row_list.insert(0, "")  # Пустышка в начало
+                    result.append(row_list)
+
+                # Вычисляем разницу (текущие значения в группе)
+                # Записываем суммы в строку разделителя `[row_for_count]`
+                result[row_for_count_idx].insert(3, current_dse_count)
+                result[row_for_count_idx].insert(6, current_up_sum)
+
+                # Копируем 7-й элемент из первой строки данных этой группы
+                if len(group) > 0:
+                    first_row_data = list(group.iloc[0].to_dict().values())[1:]
+                    result[row_for_count_idx].append(first_row_data[7] if len(first_row_data) > 7 else "")
 
             return result
 
-        def _reload_search():
-            try:
-                self.search = SearchBam(listes_excel)
-                self.data = self.search.get_dict_all_data()
-                logger.info("Reloaded SearchBam during recovery for %s", listes_excel)
-            except Exception:
-                logger.exception("Reloading SearchBam failed for %s", listes_excel)
-
-        try:
-            return attempt_recover(_process, recover_funcs=[_reload_search], attempts=2)
-        except Exception:
-            logger.exception("result_creation_function failed for %s", listes_excel)
+        except Exception as e:
+            logger.exception("result_creation_function критическая ошибка для %s: %s", listes_excel, e)
             return []
 
     def main(self):
         result = []
         for listes_excel in self.listes_excel:
             res = self.result_creation_function(listes_excel)
+            if not res or res == [["ПУСТО"]]:
+                continue
+
             res_0 = res[0]
             res.pop(0)
-            i:list
             res.reverse()
-            res.insert(0,res_0)
+            res.insert(0, res_0)
+
             for i in res:
                 if "№" in i:
                     i.remove("№")
-                    i.insert(0,listes_excel)
+                    i.insert(0, listes_excel)
                 result.append(i)
             result.append([])
         return result
@@ -190,6 +146,8 @@ class BamMain:
 if __name__ == '__main__':
     run = BamMain()
     config = JsonConfig()
-    excelPr = excel_enter.ExcelWriter(config.getJPPathFile_output(), min_prog="BAM")
+    for i in run.main():
+        print(i)
 
-    excelPr.write_to_sheet(run.main(), "Бам по УП")
+    # excelPr = excel_enter.ExcelWriter(config.getJPPathFile_output(), min_prog="BAM")
+    # excelPr.write_to_sheet(run.main(), "Бам по УП")

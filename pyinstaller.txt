@@ -1,0 +1,1 @@
+pyinstaller --onefile --icon=static/icons/new_icon_report-conversion-program.ico -w --hidden-import plyer.platforms.win.notification --name="Good_Morning" --add-data "static;static"  body.py

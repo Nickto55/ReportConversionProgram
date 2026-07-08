@@ -222,8 +222,6 @@ class ReportConversion:
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog="Ge")
             excelPr.write_to_sheet(ge_prog.main(), "Общая информация")
 
-        print('======================================================')
-        print(self.ubroutine_Bam_var)
         if self.ubroutine_Bam_var:
             tr_prog = TrackMain()
             excelPr = excel_enter.ExcelWriter(self.config.getJPPathFile_output(), min_prog='Tr')
@@ -569,7 +567,6 @@ if __name__ == "__main__":
     else:
         # Импортируем и запускаем GUI
         from body import MainGUI
-        import tkinter as tk
-        root = tk.Tk()
-        gui = MainGUI(root, app)
-        root.mainloop()
+
+
+        gui = MainGUI(app)
